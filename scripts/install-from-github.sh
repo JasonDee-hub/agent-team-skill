@@ -28,6 +28,9 @@ else
 Usage: install-from-github.sh [--cursor] [--claude] [--codex] [--all]
 
 Default: --cursor
+
+Clones/updates the repo and copies agent-team/ into the target skill dirs.
+No key required.
 EOF
         exit 0
         ;;
@@ -37,33 +40,6 @@ EOF
         ;;
     esac
   done
-fi
-
-resolve_key_file() {
-  if [[ -n "${AGENT_TEAM_KEY_FILE:-}" ]]; then
-    echo "$AGENT_TEAM_KEY_FILE"
-    return
-  fi
-  if [[ -n "${AGENT_TEAM_KEY:-}" ]]; then
-    local tmp
-    tmp="$(mktemp)"
-    printf '%s' "$AGENT_TEAM_KEY" > "$tmp"
-    echo "$tmp"
-    return
-  fi
-  local default="$HOME/.config/agent-team-skill/install.key"
-  if [[ -f "$default" ]]; then
-    echo "$default"
-    return
-  fi
-  echo "Install unavailable. Please contact the maintainer." >&2
-  exit 1
-}
-
-KEY_FILE="$(resolve_key_file)"
-CLEANUP_TMP=false
-if [[ -n "${AGENT_TEAM_KEY:-}" && "${KEY_FILE}" == /tmp/* ]]; then
-  CLEANUP_TMP=true
 fi
 
 mkdir -p "$(dirname "$CACHE_DIR")"
@@ -78,28 +54,12 @@ else
   git clone --branch "$REF" "$REPO_URL" "$CACHE_DIR"
 fi
 
-ENC="$CACHE_DIR/sealed/agent-team.enc"
-if [[ ! -f "$ENC" ]]; then
-  $CLEANUP_TMP && rm -f "$KEY_FILE" || true
-  echo "Install unavailable. Please contact the maintainer." >&2
-  exit 1
-fi
-
-TMP_TAR="$(mktemp)"
-if ! openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
-  -in "$ENC" -out "$TMP_TAR" -pass "file:${KEY_FILE}"; then
-  rm -f "$TMP_TAR"
-  $CLEANUP_TMP && rm -f "$KEY_FILE" || true
-  echo "Install unavailable. Please contact the maintainer." >&2
-  exit 1
-fi
-$CLEANUP_TMP && rm -f "$KEY_FILE" || true
-
-rm -rf "$CACHE_DIR/agent-team"
-tar -C "$CACHE_DIR" -xzf "$TMP_TAR"
-rm -f "$TMP_TAR"
-
 SRC="$CACHE_DIR/agent-team"
+if [[ ! -f "$SRC/SKILL.md" ]]; then
+  echo "Install failed: agent-team/SKILL.md not found in $CACHE_DIR" >&2
+  echo "Make sure you are on a ref that publishes the plaintext skill." >&2
+  exit 1
+fi
 
 copy_skill() {
   local dest_parent="$1"

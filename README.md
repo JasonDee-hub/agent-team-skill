@@ -90,13 +90,13 @@ A multi-agent expert-team skill pack for software development. Works with **Curs
 
 ### 安装
 
+把本仓库地址发给别人后，用下面任一方式安装即可（**无需密钥**）。
+
 **Cursor（推荐）**
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/scripts/install-from-github.sh | bash
 ```
-
-也可在 Cursor：**Customize → Rules → Add Rule → Remote Rule (GitHub)**，填入本仓库 URL。
 
 **Claude Code**
 
@@ -108,6 +108,12 @@ curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/scripts/install-from-github.sh | bash -s -- --codex
+```
+
+一次装全部目标：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/scripts/install-from-github.sh | bash -s -- --all
 ```
 
 ---
@@ -186,13 +192,13 @@ In Agent chat:
 
 ### Install
 
+Share this repo URL, then install with any of the commands below (**no key required**).
+
 **Cursor (recommended)**
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/scripts/install-from-github.sh | bash
 ```
-
-You can also use Cursor **Customize → Rules → Add Rule → Remote Rule (GitHub)** with this repository URL.
 
 **Claude Code**
 
@@ -204,6 +210,12 @@ curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/scripts/install-from-github.sh | bash -s -- --codex
+```
+
+Install everywhere:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/scripts/install-from-github.sh | bash -s -- --all
 ```
 
 ---

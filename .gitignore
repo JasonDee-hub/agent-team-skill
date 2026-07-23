@@ -3,14 +3,12 @@
 .idea/
 .vscode/
 
-# Plaintext skill body — never publish; only sealed/agent-team.enc goes to GitHub
-/agent-team/
-
-# Local keys
+# Local keys / env (never commit)
 *.key
 .env
 .seal-key
 
-# Author-only packing (not published)
+# Author-only packing helpers (optional; not required for public install)
 scripts/seal.sh
 scripts/unseal.sh
+sealed/
