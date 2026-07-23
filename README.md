@@ -110,6 +110,14 @@ curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/
 curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/scripts/install-from-github.sh | bash -s -- --codex
 ```
 
+### 推荐配套：Ponytail
+
+开发主场（写代码 / 审查 / 排障改码）默认走 [ponytail](https://github.com/DietrichGebert/ponytail) 极简姿势。未安装时专家团仍用内置梯子摘要；安装完整套件后效果更完整：
+
+```bash
+npx skills add https://github.com/DietrichGebert/ponytail --skill ponytail
+```
+
 ---
 
 ## English
@@ -204,6 +212,14 @@ curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/scripts/install-from-github.sh | bash -s -- --codex
+```
+
+### Recommended companion: Ponytail
+
+On the software path (implement / review / minimal debug fixes), Agent Team defaults to [ponytail](https://github.com/DietrichGebert/ponytail). A built-in ladder digest always works; install the full skill pack for the complete suite:
+
+```bash
+npx skills add https://github.com/DietrichGebert/ponytail --skill ponytail
 ```
 
 ---
