@@ -1,0 +1,16 @@
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Plaintext skill body — never publish; only sealed/agent-team.enc goes to GitHub
+/agent-team/
+
+# Local keys
+*.key
+.env
+.seal-key
+
+# Author-only packing (not published)
+scripts/seal.sh
+scripts/unseal.sh
