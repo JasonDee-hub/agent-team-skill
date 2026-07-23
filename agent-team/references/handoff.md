@@ -1,8 +1,23 @@
 # 专家团交接协议
 
-主控派遣与专家回报统一用下列字段，避免信息丢失。所有顶层字段均须保留且**不得改名**；不适用项写 `none`、`[]` 或简短原因。
+主控与专家统一使用下列 canonical 字段名。必填字段不可省略或改名；条件字段只在适用时出现，不用填 `none` 或空数组凑格式。
 
 ## 主控 → 专家（派遣包）
+
+### 必填
+
+- `goal`：用户总目标
+- `task_id`：当前子任务唯一标识
+- `role`：`Atlas | Mira | Kane | Vera | Reed | Lina | Orin`
+- `deliverable`：本任务的具体交付物
+- `scope`：允许读取/写入的路径与明确边界；写任务须给互斥路径
+- `acceptance`：可判定的通过标准
+
+### 条件字段
+
+- `constraints`：存在技术、时间、权限或风格约束时填写
+- `context`：存在上游结论、关键日志或已尝试路径时填写
+- `handoff_from`：由上游角色转交时填写
 
 ```yaml
 goal: <用户总目标一句话>
@@ -13,39 +28,41 @@ scope:
   paths: [<相关路径或 glob>]
   in: [<必须做>]
   out: [<明确不做>]
-constraints: [<技术/时间/风格约束>]
 acceptance: [<可判定的通过标准>]
-context: |
-  <上游结论、关键日志、已尝试过的路径；无则写「无」>
-handoff_from: <上游角色或 main|none>
+# constraints/context/handoff_from 按需添加
 ```
 
 ## 专家 → 主控（回报包）
 
-结束时按此结构回报（可用 Markdown 标题，字段名保持一致）：
+### 必填
+
+- `task_id`：与派遣一致
+- `role`：当前角色
+- `status`：`done | blocked | needs_handoff`
+- `summary`：结果与结论的简要说明
+- `next`：收工、继续或建议改派的下一步
+
+### 条件字段
+
+- `changes`：修改或删除文件时填写
+- `evidence` / `verify`：测试、审查、诊断任务，或需要提供验收证据时填写
+- `risks`：仅在确有已知风险或未覆盖场景时填写
+- `blocked_by`：仅当 `status: blocked` 时填写
 
 ```yaml
 task_id: <与派遣一致>
 role: <本角色>
 status: done | blocked | needs_handoff
-summary: <做了什么，一句话>
-changes:
-  - path: <文件>
-    note: <改动要点>
-evidence:
-  - <命令/退出码/日志摘要/截图说明>
-verify:
-  - <如何验证；未跑则写原因>
-risks:
-  - <已知限制或未覆盖场景>
+summary: <结果与结论>
 next:
   suggest_role: <none|Atlas|Mira|Kane|Vera|Reed|Lina|Orin>
-  reason: <为何改派或可收工>
-blocked_by: <若 status=blocked，写清缺什么；否则写 none>
+  reason: <为何收工、继续或改派>
+# changes/evidence/verify/risks/blocked_by 按条件添加
 ```
 
 ## 主控义务
 
-- 派遣 prompt **必须包含**派遣包字段（可内嵌，不必真 YAML）。
-- 回收后先核对 `status/evidence/next`，再决定收工、补派或改派。
-- 向下游传递时，把上游 `summary/changes/evidence` 写入新派遣包的 `context`。
+- 派遣前确认权限边界；没有实现授权时保持只读。
+- 并行写任务的 `scope` 必须互斥；重叠路径、共享 lockfile 与生成产物必须串行。
+- 回收后核对 `status`、`next` 和适用的验收证据，再决定收工、补派或改派。
+- 向下游传递时，将必要的上游 `summary`、`changes`、`evidence` 放入新派遣包的 `context`。

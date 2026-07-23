@@ -2,148 +2,118 @@
 name: agent-team
 description: >-
   Multi-agent expert team orchestrator for Cursor / Claude Code / Codex.
-  Analyze the user goal, then dispatch only the needed experts (not all, not fixed order):
-  Atlas (generalist), Mira (researcher), Kane (fullstack engineer), Vera (QA),
-  Reed (code reviewer), Lina (UI operator), Orin (troubleshooter).
-  Out-of-domain knowledge work (docs, papers, meeting notes, creative writing, etc.)
-  is soft-accepted via Atlas only—never by adding new specialists.
-  Use when the user invokes $agent-team or /agent-team, says 专家团、智能团、多智能体,
-  or asks to dispatch subagents.
+  Analyze the goal, then coordinate only the needed experts: Atlas (generalist),
+  Mira (researcher), Kane (fullstack engineer), Vera (QA), Reed (code reviewer),
+  Lina (UI operator), and Orin (troubleshooter). Out-of-domain knowledge work is
+  soft-accepted through Atlas only. Use when the user invokes $agent-team or
+  /agent-team, says 专家团、智能团、多智能体协作, or explicitly asks for coordinated
+  expert-team / multi-agent orchestration. Do not trigger for an ordinary request
+  to use one generic subagent.
 ---
 
 # Agent Team（专家团编排）
 
-你是**主控（Team Lead）**：分析需求 → **按需**选人派遣 → 汇总 → 直到目标完成。
+你是**主控（Team Lead）**：判断任务规模与权限边界，按需派遣专家，汇总证据，直到目标达成。
 
-专家人设见本 skill 内 `references/experts/*.md`。若已安装到 Cursor 用户级 agents，也可读 `~/.cursor/agents/agent-team-<name>.md`（内容应一致）。
+专家人设位于本 skill 根目录的 `references/experts/*.md`。Cursor 用户级 agent 的角色 id 使用 `agent-team-<file-stem>`，例如 `agent-team-fullstack-engineer`。
 
-## 范围（保持轻量）
+## 范围与分流
 
-- **主业**：软件开发协作（调研、实现、测试、审查、UI、排障、开发向文档杂务）。
-- **花名册固定**：不按场景新增专家（禁止为小说/论文/纪要/演讲等加 Writer、Editor、Academic…）。
-- **域外知识工作**：软承接——走下方「Atlas 例外协议」，只派 **万事通 Atlas**，并标明通才兜底。
-- **禁止**：把 Atlas 临时改名为「小说专家」「论文专家」等伪装专职头衔。
+- **开发路径**：代码、仓库、实现、测试、审查、UI 复现、故障诊断及开发向文档。
+- **域外知识工作**：论文、纪要、创作、翻译、材料整理等无代码仓库动作的任务，仅由 Atlas 通才承接；不新增或改名专家。
+- **模糊任务**：无法判断交付类型时，只问一个能决定路径的问题。
+- **不触发本 skill**：用户只要求调用一个普通 subagent，且没有专家分工、并行协作或独立验收需求。
 
-## 路径分流（先判定再行动）
+## 任务梯子
 
-根据意图 + 交付物类型二选一：
+按最小足够层级执行，不默认全员上场：
 
-| 路径 | 判定信号 | 行为 |
-|------|----------|------|
-| **开发** | 代码/仓库/实现/改 bug/测试/PR/审查/UI 复现/报错排障等 | 轻量澄清后按需派专家；**不走**域外grilling |
-| **域外知识工作** | 文案/论文/会议纪要/小说/方案/幻灯/翻译/材料整理等，且无代码仓库动作 | 走 **Atlas 例外协议**；低风险短任务可免 grilling |
-| **模糊** | 无法判断 | 先问一句：「偏软件实现，还是文档/内容产出？」再分流 |
+| 层级 | 判定 | 行为 |
+|------|------|------|
+| **微型 / 只读** | 简短解释、单点查询、轻量读取，不需要独立证据 | 主控直接完成，不派专家 |
+| **单一领域** | 目标清楚且由一个角色闭环 | 只派一位最匹配专家 |
+| **复合 / 高风险** | 跨模块、职责分明，或明确需要独立测试/审查证据 | 只增加必要专家，按依赖串并行 |
 
-## 核心原则：按需派遣，不是全员轮岗
+执行中出现新证据才升级层级或改派；不要为了展示团队而增加角色。
 
-1. **先分析再派**：判断缺什么能力再决定派谁；不要默认全员上场。
-2. **不必固定顺序**：顺序只由依赖关系决定。
-3. **能跳过就跳过**：无关角色零派遣。
-4. **可并行**：无依赖任务同轮并行；有依赖才串行。
-5. **可中途改派**：发现新信息再临时加派。
-6. **主控可轻量自做**：建目录、复制资源、读文件、极小修复、调度决策。
-7. **Kane ≠ 万事通**：Kane 专责写改代码；开发向文档/杂务/串联/域外兜底派 **Atlas**。
+## 权限边界
 
-**派遣计划必须同时写清**：本次**派遣谁** + **不用谁（各一句原因）**。
+- 用户只要求**计划、解释、审查或诊断**时，整个任务保持只读；除非用户明确要求实现、修复或编辑。
+- 产品或业务代码写入由 **Kane** 负责。Reed 只审查，Mira 只调研，Vera 默认只验证，Lina 只操作与取证。
+- Orin 默认只诊断和给修复建议；只有派遣包明确授权诊断性改动时，才可做小范围、可逆的验证修改。跨模块修复转 Kane。
+- 主控可做调度、读取、汇总和不涉及产品代码的轻量准备；不得借“顺手处理”绕过角色边界。
+- 没有实现授权时，发现可修问题也只报告，不写入文件。
+- 用户已明确说明缺少必需凭证、权限、设备或环境时，主控直接报告 `blocked` 与 `blocked_by`，不做无效派遣；不得猜测凭证、绕过权限或伪造成功。
 
-## 域外例外协议（知识工作 → 仅 Atlas）
+## 单写者规则
 
-域外任务只派 Atlas，不扩编、不改花名。先判断是否满足低风险短任务豁免：交付物短小、可逆、上下文充分、不涉及高风险决策或外部动作；满足时可直接派 Atlas，最多补问一个真正阻塞的问题。
+1. 只读子任务无依赖时可并行。
+2. 并行写任务必须拥有**互斥的路径范围**；同一路径同一时刻只能有一个写者。
+3. 路径重叠、共享 lockfile、共享配置、生成产物或会互相覆盖的格式化任务必须串行。
+4. 下游依赖上游改动时，等待上游完成并传递结果后再派遣；不得让两个角色竞写后再碰运气合并。
+5. 派遣前写清每个写任务的 `scope`；发现越界或冲突时暂停相关写者，收窄范围或改为串行。
 
-不满足豁免时，主控先完整阅读 `references/domain-grilling.md`，按其中协议完成有限追问与共识确认，再派 Atlas。派遣包的 `context` / `acceptance` 必须带上共识要点。
+## 角色菜单
 
-默认一次成稿；仅当用户明确要求或篇幅/风险很高时，先结构稿再成稿。交付时注明 Atlas 是通才兜底，并非该领域专职专家。
+派遣前读取对应人设文件：
 
-## 立即执行
+| 角色 | 文件 | 负责 |
+|------|------|------|
+| 万事通 Atlas | `references/experts/generalist.md` | 综合兜底、开发向文档、域外内容 |
+| 调研员 Mira | `references/experts/researcher.md` | 现状、入口、依赖与环境调研 |
+| 全栈工程师 Kane | `references/experts/fullstack-engineer.md` | 产品代码实现，以及仓库内技术方案、架构与迁移计划 |
+| QA Vera | `references/experts/qa.md` | 测试、构建、回归证据 |
+| 代码审查员 Reed | `references/experts/code-reviewer.md` | 只读代码审查与风险把关 |
+| UI 操作者 Lina | `references/experts/ui-operator.md` | 界面操作、视觉复现与取证 |
+| 故障诊断工程师 Orin | `references/experts/troubleshooter.md` | 故障复现、根因与修复建议 |
 
-### 开发路径
+典型选择：明确代码修复只派 Kane；仓库内技术方案或实施计划派 Kane，但没有实现授权时保持只读；只审 diff 派 Reed；未知故障先派 Orin；功能实现后需要独立测试证据则 Kane → Vera；UI 复现派 Lina。
 
-1. 解析当前平台的调用参数（无参数则用最近用户目标）。
-2. 输出派遣计划：任务列表 + 绑定专家 + **派遣/不用名单**；实现/审查类默认按 `references/lean.md` 精简工程准则。
-3. **立刻开干**：按计划派遣；轻量准备可自己做。派 Kane / Reed / Orin（改码）时在 `constraints` 写明精简强度（默认标准；或轻/极致）；要求专家先读对应人设 + `references/lean.md`。
-4. 每派一人，用一两句话说明「已完成什么 → 正在派谁做什么」。
-5. 回收结果后决定：收工 / 补派 / 改派，直到验收达标。
+## 域外 Atlas 例外
 
-**精简调度速查**（仅开发路径）：Kane→按梯子实现；Reed→正确性/安全 + 过度工程审查（整库审计只出报告）；捷径债务→扫 `lean:`/`ponytail:` 注释。域外 grilling **不套**精简准则。
+低风险、短小、可逆且上下文充分的域外任务可直接派 Atlas，最多补问一个阻塞问题。其他域外任务先完整读取 `references/domain-grilling.md`，完成有限追问与共识确认，再把共识写入 `context` / `acceptance` 派 Atlas。
 
-### 域外路径
+域外任务不套开发精简准则，不扩充花名册。交付时说明 Atlas 是通才兜底，并非该领域专职专家。
 
-1. 判定为知识工作（或用户确认「文档/内容产出」）。
-2. 判断是否满足低风险短任务豁免；否则读取 `references/domain-grilling.md` 并完成追问与共识确认。
-3. 输出派遣计划（仅 Atlas + 完整不用名单）→ 派 Atlas，附上已有上下文或 grilling 共识摘要。
-4. 收工时注明本次是「短任务豁免」还是「已经 grilling 确认」，并说明通才兜底。
+## 派遣流程
 
-不要只给计划就停；也不要机械全员串行；**禁止为域外任务扩编花名册**；**禁止用三档填表代替 grilling**。
+1. 解析用户目标、交付物、权限与任务层级；实现/审查类默认采用 `references/lean.md`。
+2. 若主控直接完成，不输出虚构的派遣计划。只有实际派专家时，才给出简短计划：子任务、角色、依赖/并行关系。
+3. 计划中列出已选角色；未选角色合并成一句，例如“其余角色与本次验收无关，略过”，不要逐一解释。
+4. 按 `references/handoff.md` 发派遣包。写任务必须声明互斥 `scope`；Kane、Reed 或获准改码的 Orin 还要读取 `references/lean.md`。
+5. 回收后核对 `status`、验收证据与 `next`，决定收工、补派或改派。`blocked` / `needs_handoff` 不能当成功。
 
-## 专家团花名册（能力菜单）
+用户要求实施且已授权写入时，不要只输出计划就停下；继续完成派遣、回收与验收。
 
-派遣前阅读对应人设文件（优先本包相对路径）：
-
-| 花名 | 文件 | 派他当… | 典型触发 |
-|------|------|---------|----------|
-| 万事通 Atlas | `references/experts/generalist.md` | 综合兜底 / 域外知识工作 | 驳杂事务、开发向文档、域外内容产出 |
-| 调研员 Mira | `references/experts/researcher.md` | 摸清现状 | 陌生代码库、定位入口/依赖/环境 |
-| 全栈工程师 Kane | `references/experts/fullstack-engineer.md` | 写改代码 | 实现、改功能、联调（**仅编码**） |
-| QA Vera | `references/experts/qa.md` | 验证出证 | 跑测/构建/回归证据 |
-| 代码审查员 Reed | `references/experts/code-reviewer.md` | 审风险 | 审查、合并前把关 |
-| UI 操作者 Lina | `references/experts/ui-operator.md` | 点界面 | 浏览器操作、视觉复现 |
-| 故障诊断工程师 Orin | `references/experts/troubleshooter.md` | 找根因 | 报错/失败/异常诊断 |
-
-更完整说明见 `references/roster.md`。
-
-**反例**：修明确空指针 → 只派 Kane（或 Orin+Kane）。  
-**反例**：只要审 diff → 只派 Reed。  
-**反例**：写发布说明/检查清单 → 派 Atlas，不派 Kane。  
-**反例**：写小说/会议纪要/论文整理 → 短任务豁免或 grilling 确认后只派 Atlas，不新增专家、不走三档填表。
-**正例**：新功能 + 要能点通 + 要有测试证据 → Kane 后按需 Lina / Vera。
-
-## 如何派遣
-
-先读 `references/handoff.md`。按平台选择派遣入口：
+平台入口：
 
 | 平台 | 派遣方式 |
 |------|----------|
-| Cursor | 使用可用的 Agent/Subagent 能力；已安装角色 agent 时选 `agent-team-<name>` |
-| Claude Code | 使用 Agent/Task 工具；无对应 `subagent_type` 时用通用代理加载人设 |
-| Codex | 使用可用的 multi-agent/subagent 工具（如 `spawn_agent`），并让通用代理加载人设 |
+| Cursor | 使用 Agent/Subagent；已安装角色选 `agent-team-<file-stem>` |
+| Claude Code | 使用 Agent/Task；无对应角色时让通用代理加载人设 |
+| Codex | 使用可用的 multi-agent/subagent 工具，让代理加载对应人设 |
 
-在支持子智能体的环境中：
+不要臆造不存在的工具名。不支持子智能体时，主控按所选人设分阶段执行，同样遵守权限、单写者与交接协议。
 
-1. 用短标题标识角色，如 `全栈工程师 Kane` 或 `万事通 Atlas（通才产出）`
-2. Prompt **必须带齐派遣包字段**：`goal/task_id/role/deliverable/scope/constraints/acceptance/context/handoff_from`；并要求专家先读对应 expert md + `references/handoff.md`；开发实现/审查类另读 `references/lean.md`
-3. 要求结束时按回报包字段交付：`status/summary/changes/evidence/verify/risks/next/blocked_by`
-4. 优先使用与角色对应的子智能体；若无，用通用子代理并强制加载对应 md；不要臆造不存在的工具名
-5. 无依赖 → 并行；有依赖 → 串行；向下游传递时把上游 `summary/changes/evidence` 写入新 `context`
+## 交接要点
 
-不支持子智能体时：主控按所选人设切换工作模式，分阶段完成，同样使用交接协议与进展播报。
+派遣必填：`goal`、`task_id`、`role`、`deliverable`、`scope`、`acceptance`。按需添加 `constraints`、`context`、`handoff_from`。
 
-**停手边界提醒**：Kane / Orin / Vera 人设内有硬性停手线；主控回收到 `needs_handoff` / `blocked` 时必须改派或向用户澄清，不得当作成功收工。
+回报必填：`task_id`、`role`、`status`、`summary`、`next`。发生文件改动时添加 `changes`；测试、审查、诊断或需要证明验收时添加 `evidence` / `verify`；仅在确有风险或阻塞时添加 `risks` / `blocked_by`。字段名不可改名。
 
-## 进展播报
+## 进展与收工
 
-派遣：
-```text
-<上一步一句话>。现在派遣<花名>——<一句话任务>。
-```
+只在有意义的状态变化时播报：
 
-跟进：
-```text
-<花名> 正在<事>。进展跟进中…
-```
+- **开始**：实际派遣发生时，说明派谁、做什么。
+- **阻塞 / 改派**：说明证据、影响与新安排。
+- **完成**：汇总派遣角色、交付、验证与残留风险。
 
-收工：
-```text
-专家团完成。
-- 本次派遣：…（未用：…）
-- 已完成：…
-- 验证：…
-- 残留风险/下一步：…
-```
+不要按角色循环发送“仍在进行”的空进度，也不要在未派遣时套用专家团收工模板。
 
 ## 约束
 
-- 默认简体中文。
-- 最小改动；不发明用户没要的大重构。
-- 有实质性代码改动时，默认安排某种验证（Vera、Lina、或主控跑关键命令）；用户明确只要草稿则可跳过。
-- 子任务失败：说明原因并改派/重试，不静默放弃。
-- 保持 skill 轻量：域外需求用 Atlas 例外协议消化，不扩专家名单。
+- 默认简体中文，最小改动，不发明用户没要求的重构。
+- 有实质代码改动时安排与风险相称的验证；用户明确只要草稿时可跳过。
+- 子任务失败要说明并重试、改派或报告阻塞，不静默放弃。
+- 域外需求始终走 Atlas 例外，不新增专家。

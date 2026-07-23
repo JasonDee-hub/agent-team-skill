@@ -39,10 +39,11 @@ A multi-agent expert-team skill pack for software development. Works with **Curs
    判断这次真正需要谁：调研？写代码？测试？审查？点 UI？排障？写文档？
 
 3. **按需派遣专家**  
-   只叫需要的人，不必全员上场，也没有固定流水线顺序。能并行则并行，有依赖则串行。
+   只叫需要的人，不必全员上场，也没有固定流水线顺序。独立只读任务可并行；写任务仅在路径互斥时并行，重叠范围必须串行。
 
-4. **边做边汇报**  
-   你会看到类似「正在派遣全栈工程师 Kane…」「QA Vera 正在收集测试证据…」的进展。
+4. **在关键节点汇报**
+
+   开始派遣、发生阻塞或改派、以及完成收口时会同步进展，不循环发送空状态。
 
 5. **收口验收**  
    汇总改动、验证结果与残留风险，必要时再补派。
@@ -129,6 +130,16 @@ curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/
 curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash -s -- --all
 ```
 
+安装器只维护每个平台的一份技能副本：
+
+| 平台 | 安装路径 |
+|------|----------|
+| Cursor | `~/.cursor/skills/agent-team`、`~/.cursor/agents/agent-team-*.md`、`~/.cursor/commands/agent-team.md` |
+| Claude Code | `~/.claude/skills/agent-team` |
+| Codex | `${CODEX_HOME:-~/.codex}/skills/agent-team` |
+
+升级时，安装器只会清理它拥有的 Cursor `agent-team-*.md` 专家文件。若检测到旧版通用文件名（如 `qa.md`、`researcher.md`），会发出迁移提示但不会删除；请确认它们属于旧版 Agent Team 后再自行备份、移除。旧版本还可能在 `~/.agents/skills/agent-team` 留下 Codex 副本，建议备份后移除，避免 Codex 重复发现同一技能；若 `CODEX_HOME` 明确指向 `~/.agents`，该路径就是权威安装，不会作为旧副本告警。
+
 ---
 
 ## English
@@ -154,10 +165,11 @@ You don’t manually rotate personas. Use the platform-specific entry point and 
    Research? Implementation? Tests? Review? UI checks? Debugging? Docs?
 
 3. **Experts are dispatched on demand**  
-   Only the needed roles are called—no mandatory full roster, no fixed assembly line. Independent work can run in parallel; dependent work stays sequential.
+   Only the needed roles are called—no mandatory full roster, no fixed assembly line. Independent read-only work may run in parallel; writers may run concurrently only with disjoint paths, while overlapping scopes stay sequential.
 
-4. **Progress is reported as it happens**  
-   You’ll see updates like “Dispatching full-stack engineer Kane…” or “QA is collecting test evidence…”.
+4. **Progress is reported at meaningful transitions**
+
+   Updates are sent when dispatch starts, work becomes blocked or is reassigned, and the team finishes, not as repetitive heartbeat messages.
 
 5. **Wrap-up and acceptance**  
    Changes, verification, and remaining risks are summarized; extra experts are called only if needed.
@@ -243,6 +255,16 @@ Install everywhere:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash -s -- --all
 ```
+
+The installer maintains one skill copy per platform:
+
+| Platform | Install path |
+|----------|--------------|
+| Cursor | `~/.cursor/skills/agent-team`, `~/.cursor/agents/agent-team-*.md`, `~/.cursor/commands/agent-team.md` |
+| Claude Code | `~/.claude/skills/agent-team` |
+| Codex | `${CODEX_HOME:-~/.codex}/skills/agent-team` |
+
+During upgrades, the installer removes only the Cursor `agent-team-*.md` profiles that it owns. If legacy generic names such as `qa.md` or `researcher.md` are present, it prints a migration warning and leaves them untouched; back them up and remove them only after confirming they came from an older Agent Team install. Older releases may also have left a Codex copy at `~/.agents/skills/agent-team`; back it up and remove it to prevent duplicate skill discovery. If `CODEX_HOME` intentionally points to `~/.agents`, that path is canonical and is not reported as a legacy copy.
 
 ---
 
