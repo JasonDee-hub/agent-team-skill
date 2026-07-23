@@ -90,30 +90,37 @@ A multi-agent expert-team skill pack for software development. Works with **Curs
 
 ### 安装
 
-把本仓库地址发给别人后，用下面任一方式安装即可（**无需密钥**）。
+把本仓库地址发给别人后，用下面命令安装即可（**无需密钥**）。
 
 **Cursor（推荐）**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/scripts/install-from-github.sh | bash
+curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash
+```
+
+若 `curl` 拉到旧缓存，可改用：
+
+```bash
+git clone --depth 1 https://github.com/JasonDee-hub/agent-team-skill.git /tmp/agent-team-skill \
+  && bash /tmp/agent-team-skill/install.sh
 ```
 
 **Claude Code**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/scripts/install-from-github.sh | bash -s -- --claude
+curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash -s -- --claude
 ```
 
 **Codex**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/scripts/install-from-github.sh | bash -s -- --codex
+curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash -s -- --codex
 ```
 
 一次装全部目标：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/scripts/install-from-github.sh | bash -s -- --all
+curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash -s -- --all
 ```
 
 ---
@@ -192,30 +199,37 @@ In Agent chat:
 
 ### Install
 
-Share this repo URL, then install with any of the commands below (**no key required**).
+Share this repo URL, then install with (**no key required**):
 
 **Cursor (recommended)**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/scripts/install-from-github.sh | bash
+curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash
+```
+
+If `curl` hits a stale cache:
+
+```bash
+git clone --depth 1 https://github.com/JasonDee-hub/agent-team-skill.git /tmp/agent-team-skill \
+  && bash /tmp/agent-team-skill/install.sh
 ```
 
 **Claude Code**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/scripts/install-from-github.sh | bash -s -- --claude
+curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash -s -- --claude
 ```
 
 **Codex**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/scripts/install-from-github.sh | bash -s -- --codex
+curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash -s -- --codex
 ```
 
 Install everywhere:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/scripts/install-from-github.sh | bash -s -- --all
+curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash -s -- --all
 ```
 
 ---
