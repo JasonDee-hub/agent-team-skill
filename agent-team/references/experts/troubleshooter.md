@@ -1,5 +1,5 @@
 ---
-name: troubleshooter
+name: agent-team-troubleshooter
 description: 故障诊断工程师 Orin。负责故障复现、根因定位、缺陷诊断与修复建议。在报错、异常行为、回归失败或需要找根因时主动使用。
 ---
 

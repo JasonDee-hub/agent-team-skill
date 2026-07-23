@@ -1,6 +1,6 @@
 # 专家团交接协议
 
-主控派遣与专家回报统一用下列字段，避免信息丢失。字段可省略不适用项，但**不得改名**。
+主控派遣与专家回报统一用下列字段，避免信息丢失。所有顶层字段均须保留且**不得改名**；不适用项写 `none`、`[]` 或简短原因。
 
 ## 主控 → 专家（派遣包）
 
@@ -41,7 +41,7 @@ risks:
 next:
   suggest_role: <none|Atlas|Mira|Kane|Vera|Reed|Lina|Orin>
   reason: <为何改派或可收工>
-blocked_by: <若 status=blocked，写清缺什么>
+blocked_by: <若 status=blocked，写清缺什么；否则写 none>
 ```
 
 ## 主控义务

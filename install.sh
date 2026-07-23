@@ -4,7 +4,8 @@
 set -euo pipefail
 
 REPO_URL="${AGENT_TEAM_REPO_URL:-https://github.com/JasonDee-hub/agent-team-skill.git}"
-CACHE_DIR="${AGENT_TEAM_CACHE_DIR:-$HOME/.cursor/skill-repos/agent-team-skill}"
+TARGET_HOME="${AGENT_TEAM_TARGET_HOME:-$HOME}"
+CACHE_DIR="${AGENT_TEAM_CACHE_DIR:-${XDG_CACHE_HOME:-$TARGET_HOME/.cache}/agent-team-skill}"
 REF="${AGENT_TEAM_REF:-main}"
 
 install_cursor=false
@@ -43,17 +44,19 @@ fi
 
 # Prefer a local checkout when this script is run from a cloned repo (not via curl|bash).
 SRC=""
-if [[ "${BASH_SOURCE[0]:-}" == /* || "${BASH_SOURCE[0]:-}" == ./* || "${BASH_SOURCE[0]:-}" == */* ]]; then
-  _script="${BASH_SOURCE[0]}"
-  if [[ -f "$_script" ]]; then
-    _root="$(cd "$(dirname "$_script")" && pwd)"
-    if [[ -f "$_root/agent-team/SKILL.md" ]]; then
-      SRC="$_root/agent-team"
-    fi
+_script="${BASH_SOURCE[0]:-}"
+if [[ -n "$_script" && -f "$_script" ]]; then
+  _root="$(cd "$(dirname "$_script")" && pwd)"
+  if [[ -f "$_root/agent-team/SKILL.md" ]]; then
+    SRC="$_root/agent-team"
   fi
 fi
 
 if [[ -z "$SRC" ]]; then
+  if ! command -v git >/dev/null 2>&1; then
+    echo "Install failed: git is required for remote installation. Install git and try again." >&2
+    exit 1
+  fi
   mkdir -p "$(dirname "$CACHE_DIR")"
   if [[ -d "$CACHE_DIR/.git" ]]; then
     echo "Updating $CACHE_DIR ..."
@@ -81,26 +84,38 @@ copy_skill() {
 }
 
 if $install_cursor; then
-  mkdir -p "$HOME/.cursor/skills" "$HOME/.cursor/agents" "$HOME/.cursor/commands"
-  copy_skill "$HOME/.cursor/skills"
-  cp "$SRC/references/experts/"*.md "$HOME/.cursor/agents/"
-  cp "$SRC/commands/agent-team.md" "$HOME/.cursor/commands/agent-team.md"
-  echo "Installed Cursor agents → $HOME/.cursor/agents/"
-  echo "Installed Cursor command → $HOME/.cursor/commands/agent-team.md"
-  if mkdir -p "$HOME/.agents/skills" 2>/dev/null; then
-    copy_skill "$HOME/.agents/skills"
+  mkdir -p "$TARGET_HOME/.cursor/skills" "$TARGET_HOME/.cursor/agents" "$TARGET_HOME/.cursor/commands"
+  copy_skill "$TARGET_HOME/.cursor/skills"
+  for expert in "$SRC/references/experts/"*.md; do
+    cp "$expert" "$TARGET_HOME/.cursor/agents/agent-team-$(basename "$expert")"
+  done
+  cp "$SRC/commands/agent-team.md" "$TARGET_HOME/.cursor/commands/agent-team.md"
+  echo "Installed Cursor agents → $TARGET_HOME/.cursor/agents/agent-team-*.md"
+  echo "Installed Cursor command → $TARGET_HOME/.cursor/commands/agent-team.md"
+  if mkdir -p "$TARGET_HOME/.agents/skills" 2>/dev/null; then
+    copy_skill "$TARGET_HOME/.agents/skills"
   fi
 fi
 
 if $install_claude; then
-  mkdir -p "$HOME/.claude/skills"
-  copy_skill "$HOME/.claude/skills"
+  mkdir -p "$TARGET_HOME/.claude/skills"
+  copy_skill "$TARGET_HOME/.claude/skills"
 fi
 
 if $install_codex; then
-  mkdir -p "$HOME/.codex/skills"
-  copy_skill "$HOME/.codex/skills"
+  mkdir -p "$TARGET_HOME/.agents/skills" "$TARGET_HOME/.codex/skills"
+  copy_skill "$TARGET_HOME/.agents/skills"
+  copy_skill "$TARGET_HOME/.codex/skills"
 fi
 
 echo
-echo "Done. In Agent chat, try: /agent-team <your request>"
+echo "Done."
+if $install_cursor; then
+  echo "Cursor: /agent-team <your request>"
+fi
+if $install_claude; then
+  echo "Claude Code: /agent-team <your request>"
+fi
+if $install_codex; then
+  echo 'Codex: $agent-team <your request> (or ask for the expert team in natural language)'
+fi

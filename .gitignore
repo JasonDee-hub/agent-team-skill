@@ -8,7 +8,6 @@
 .env
 .seal-key
 
-# Author-only packing helpers (optional; not required for public install)
-scripts/seal.sh
+# Local sealing helpers and output
 scripts/unseal.sh
 sealed/

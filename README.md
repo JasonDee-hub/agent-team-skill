@@ -28,7 +28,7 @@ A multi-agent expert-team skill pack for software development. Works with **Curs
 - 由主控按任务需要召唤合适的专家；
 - 专家各司其职，协作完成，而不是一个模型包办所有角色。
 
-它不是让你手动轮岗点名，而是让你用一句 `/agent-team …` 启动一整场分工明确的协作。
+它不是让你手动轮岗点名；按平台使用对应入口，就能启动一整场分工明确的协作。
 
 ### 它如何运作
 
@@ -70,33 +70,39 @@ A multi-agent expert-team skill pack for software development. Works with **Curs
 - 发布说明、检查清单等文档杂务  
 - 陌生仓库的快速摸底  
 
-在 Agent 聊天中直接说：
+不同平台的调用方式如下。
+
+**Cursor**
 
 ```text
 /agent-team 把登录页改成支持验证码，并补上关键测试证据
 ```
 
+**Claude Code**
+
 ```text
 /agent-team 审查最近 diff 的安全风险
 ```
 
-```text
-/agent-team 写一份本周发布说明和上线检查清单
-```
+**Codex**
 
 ```text
-/agent-team 这个报错帮我定位根因并给出最小修复建议
+$agent-team 写一份本周发布说明和上线检查清单
 ```
+
+Codex 也支持自然语言触发，例如：`请用专家团帮我定位这个报错的根因，并给出最小修复建议。`
 
 ### 安装
 
-把本仓库地址发给别人后，用下面命令安装即可（**无需密钥**）。
+把本仓库地址发给别人后，用下面命令安装即可（**无需密钥，需要 Git**）。
 
 **Cursor（推荐）**
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash
 ```
+
+Cursor 专家人设会安装为 `~/.cursor/agents/agent-team-*.md`，不会占用 `qa.md` 等通用文件名。
 
 若 `curl` 拉到旧缓存，可改用：
 
@@ -137,7 +143,7 @@ Solo development constantly switches between researching code, implementing feat
 - A lead agent decides which experts are actually needed;
 - Specialists collaborate with clear ownership—instead of one model doing everything poorly.
 
-You don’t manually rotate personas. You start with `/agent-team …` and let the team divide the work.
+You don’t manually rotate personas. Use the platform-specific entry point and let the team divide the work.
 
 ### How it works
 
@@ -179,33 +185,39 @@ Good fits:
 - Release notes and checklists  
 - Fast orientation in unfamiliar repos  
 
-In Agent chat:
+Use the entry point for your platform.
+
+**Cursor**
 
 ```text
 /agent-team Add captcha support to the login page and collect verification evidence
 ```
 
+**Claude Code**
+
 ```text
 /agent-team Review the latest diff for security risks
 ```
 
-```text
-/agent-team Write this week’s release notes and a launch checklist
-```
+**Codex**
 
 ```text
-/agent-team Reproduce this error, find the root cause, and suggest a minimal fix
+$agent-team Write this week’s release notes and a launch checklist
 ```
+
+Codex also supports natural-language triggers, for example: `Use the expert team to reproduce this error, find the root cause, and suggest a minimal fix.`
 
 ### Install
 
-Share this repo URL, then install with (**no key required**):
+Share this repo URL, then install with (**no key required; Git is required**):
 
 **Cursor (recommended)**
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash
 ```
+
+Cursor expert personas are installed as `~/.cursor/agents/agent-team-*.md`, so generic names such as `qa.md` are left untouched.
 
 If `curl` hits a stale cache:
 

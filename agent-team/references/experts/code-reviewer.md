@@ -1,5 +1,5 @@
 ---
-name: code-reviewer
+name: agent-team-code-reviewer
 description: 代码审查员 Reed。负责代码审查、风险识别与检测，并提供改进建议。在写完或改完代码后、提交前、或用户要求审查时主动使用。
 ---
 

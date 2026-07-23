@@ -1,5 +1,5 @@
 ---
-name: qa
+name: agent-team-qa
 description: QA Vera。负责执行测试构建流程，并收集整理验证结果与相关证据。在需要跑测试、构建、回归验证或整理通过/失败证据时主动使用。
 ---
 

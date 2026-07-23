@@ -1,3 +1,4 @@
-display_name: Agent Team
-short_description: On-demand multi-agent expert team orchestrator (Atlas/Mira/Kane/Vera/Reed/Lina/Orin).
-default_prompt: /agent-team Analyze my goal, pick only the needed experts, and complete the work with progress updates.
+interface:
+  display_name: "Agent Team"
+  short_description: "On-demand expert team for software work"
+  default_prompt: "Use $agent-team to analyze my goal, pick only the needed experts, and complete the work with progress updates."
