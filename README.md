@@ -63,7 +63,7 @@ Agent Team 是一个“主控 + 专家”的编排技能，不是固定流水线
 你只需要说清目标。主控会判断这次真正需要哪些角色，并在任务开始时披露执行模式：
 
 - `real_multi_agent`：平台支持真实独立智能体/进程，专家可以按依赖协作；只有这种模式下的 QA 或审查才能称为独立验证。
-- `single_agent_simulation`：平台不支持独立智能体时，主控按专家人设分阶段串行执行；不会伪称并行或独立验收。
+- `single_agent_simulation`：平台不支持独立智能体时，主控只在职责确实变化时切换必要人设，共用一份权限与验收台账；不会伪称并行或独立验收。
 
 适合使用 Agent Team 的场景：
 
@@ -83,13 +83,13 @@ Agent Team 是一个“主控 + 专家”的编排技能，不是固定流水线
 ### 工作方式
 
 1. **判断任务层级**
-   微型或只读问题由主控直接完成；单一领域只派一位专家；复合或高风险任务才增加必要专家。
+   微型/只读问题，以及授权明确、不涉及安全/数据/依赖/CI/生产等风险的单文件小改动，由主控走快路径直接完成；单一领域默认只派一位专家；复合或高风险任务才进入严格路径。
 
 2. **按需派遣专家**
-   不默认全员上场。独立只读任务可并行；写任务仅在路径互斥时并行，重叠范围必须串行。
+   不默认全员上场，也不自动追加 QA 或审查。只有用户明确要求独立验收，或风险确实需要独立证据时才增加 Vera/Reed。独立只读任务可并行；写任务仅在路径互斥时并行。
 
 3. **先声明权限边界**
-   每个派遣包都要包含 `write_authority`、`scope.read_paths`、`scope.write_paths` 和 `scope.external_actions`。缺少明确写授权时，一律按只读处理。
+   新 agent 使用完整派遣包；复用同一 agent/同一角色时只发送任务变化和必要新证据，但仍完整重申 `write_authority`、读写路径与外部动作边界。缺少明确写授权时，一律按只读处理。
 
 4. **关键节点同步进展**
    只有在开始派遣、阻塞或改派、长阶段完成可验证里程碑、最终收口时才汇报，避免循环发送空状态。
@@ -172,7 +172,7 @@ python3 scripts/test-evals.py
 git diff --check
 ```
 
-`scripts/run-evals.py` 默认只校验 eval 定义、必需安全覆盖和 skill 结构，**不会执行 agent 行为**；使用 `--actual <results.json>` 才会把外部 harness 产生的机器可读执行结果与预期逐项比较。`scripts/run-behavior-evals.py` 校验真实型任务回放结果 JSON，也不直接执行 agent。GitHub Actions 会在 macOS 与 Ubuntu 上运行离线 contract、安装器、回放结果和结构检查，不把它们冒充真实 agent eval。
+`scripts/run-evals.py` 默认只校验 eval 定义、必需安全/编排覆盖和 skill 结构，**不会执行 agent 行为**；使用 `--actual <results.json>` 才会把外部 harness 产生的机器可读执行结果与预期逐项比较。`scripts/run-behavior-evals.py` 校验真实型任务回放结果 JSON，也不直接执行 agent。GitHub Actions 会在 macOS 与 Ubuntu 上运行离线 contract、安装器、回放结果和结构检查，不把它们冒充真实 agent eval。
 
 ---
 
@@ -223,7 +223,7 @@ Agent Team is a lead-agent orchestration skill. It is not a fixed pipeline, and 
 You state the goal. The lead decides which roles are actually needed and discloses the execution mode when dispatch starts:
 
 - `real_multi_agent`: the host supports real independent agents/processes, so specialists can coordinate by dependency. Only QA or review from this mode may be called independent verification.
-- `single_agent_simulation`: when the host lacks independent agents, the lead follows the selected personas sequentially. This mode is never presented as parallel or independent acceptance.
+- `single_agent_simulation`: when the host lacks independent agents, the lead switches personas only when responsibility genuinely changes and shares one authority/acceptance ledger across phases. This mode is never presented as parallel or independent acceptance.
 
 Good fits:
 
@@ -243,13 +243,13 @@ Poor fits:
 ### How It Works
 
 1. **Classify the task level**
-   Tiny or read-only requests are handled directly by the lead; single-domain work gets one specialist; compound or high-risk work adds only the necessary roles.
+   Tiny/read-only requests and explicitly authorized, low-risk single-file edits that do not touch security, data, dependencies, CI, or production use the lead fast path. Single-domain work gets at most one specialist by default; compound or high-risk work uses the strict path.
 
 2. **Dispatch experts on demand**
-   The full roster is not used by default. Independent read-only work may run in parallel; write tasks may run concurrently only with disjoint paths, while overlapping scopes stay sequential.
+   The full roster is not used by default, and QA/review is not added automatically. Vera or Reed is added only when the user requests independent acceptance or the risk requires independent evidence. Independent read-only work may run in parallel; writes require disjoint paths.
 
 3. **Declare authority first**
-   Every handoff includes `write_authority`, `scope.read_paths`, `scope.write_paths`, and `scope.external_actions`. Without explicit write authority, the task is treated as read-only.
+   A new agent receives a full handoff. Reusing the same agent/role sends only task deltas and new evidence, while fully restating `write_authority`, path scope, and external-action boundaries. Without explicit write authority, the task is read-only.
 
 4. **Report meaningful progress**
    Updates are sent when dispatch starts, work is blocked or reassigned, a long phase completes a verifiable milestone, and the team finishes. Repetitive empty status updates are avoided.
@@ -332,7 +332,7 @@ python3 scripts/test-evals.py
 git diff --check
 ```
 
-By default, `scripts/run-evals.py` validates eval definitions, required security coverage, and skill structure; it **does not execute agent behavior**. Pass `--actual <results.json>` to compare machine-readable results produced by an external harness against expectations. `scripts/run-behavior-evals.py` validates realistic task replay result JSON and also does not execute agents directly. GitHub Actions runs the offline contract, installer, replay-result, and structure checks on macOS and Ubuntu without presenting them as live agent evals.
+By default, `scripts/run-evals.py` validates eval definitions, required safety/orchestration coverage, and skill structure; it **does not execute agent behavior**. Pass `--actual <results.json>` to compare machine-readable results produced by an external harness against expectations. `scripts/run-behavior-evals.py` validates realistic task replay result JSON and also does not execute agents directly. GitHub Actions runs the offline contract, installer, replay-result, and structure checks on macOS and Ubuntu without presenting them as live agent evals.
 
 ---
 

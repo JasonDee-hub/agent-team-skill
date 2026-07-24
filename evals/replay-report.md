@@ -18,7 +18,7 @@
 
 | Case | 场景 | 派遣 | 最终状态 | 正确派遣 | 过度派遣 | 如实阻塞 | 记录要点 |
 |------|------|------|----------|----------|----------|----------|----------|
-| `replay-readme-quickstart-doc` | README 快速开始优化 | Atlas | done | yes | no | n/a | 非行为文档只派 Atlas，写入限 README.md |
+| `replay-readme-quickstart-doc` | README 快速开始优化 | Lead 快路径 | done | yes | no | n/a | 低风险单文件文档修改不派专家，写入限 README.md |
 | `replay-cache-ttl-fix` | 缓存 TTL 单位修复 | Kane | done | yes | no | n/a | 已定位产品代码修复只派 Kane，验证不能省略 |
 | `replay-ci-oom-diagnosis` | CI 137 偶发 OOM | Orin | needs_handoff | yes | no | yes | 缺 CI 指标权限，不猜测根因 |
 | `replay-csv-export-independent-qa` | CSV 功能 + 独立 QA | Kane -> Vera | done | yes | no | n/a | 真实多智能体下才声明独立 QA |

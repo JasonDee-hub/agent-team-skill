@@ -1,8 +1,8 @@
 # 专家团交接协议
 
-主控与专家统一使用下列 canonical 字段名。必填字段不可省略或改名；条件字段只在适用时出现，不用填 `none` 或空数组凑格式。
+主控与专家统一使用下列 canonical 字段名。快路径不派专家，不生成派遣包；需要专家时，新 agent/新角色使用完整派遣包，复用同一 agent/同一角色可使用增量派遣包。权限字段始终按本轮完整声明，不得继承。
 
-## 主控 → 专家（派遣包）
+## 主控 → 专家（完整派遣包）
 
 ### 必填
 
@@ -39,6 +39,38 @@ acceptance: [<可判定的通过标准>]
 # constraints/context/handoff_from 按需添加
 ```
 
+## 主控 → 同一专家（增量派遣包）
+
+仅当复用同一 agent、`role` 未变、总目标未变且确认角色上下文仍保留时使用。只传相对上一派遣包发生变化的任务内容和必要新证据；以下字段必填：
+
+- `followup_to`：上一派遣包的 `task_id`
+- `task_id`：本轮唯一标识
+- `role`：沿用角色，仍须显式填写
+- `delta`：本轮新增/改变的交付、约束或上下文，不重复完整职责与不变背景
+- `write_authority`：本轮完整权限，不能继承
+- `scope`：本轮完整读写路径、环境和外部动作边界，不能继承
+- `acceptance`：本轮当前验收项
+
+```yaml
+followup_to: <上一 task_id>
+task_id: <本轮 task_id>
+role: <与上一轮相同>
+delta:
+  deliverable: <本轮变化>
+  # constraints/context 仅在变化时添加
+write_authority: read_only | scoped_write
+scope:
+  read_paths: [<本轮完整范围>]
+  write_paths: [<本轮完整范围；只读时为空>]
+  environment: <local|test|staging|production|other|unknown>
+  external_actions: [<本轮完整授权；默认空>]
+  in: [<本轮必须做>]
+  out: [<本轮明确不做>]
+acceptance: [<本轮可判定标准>]
+```
+
+若总目标、角色或执行模式变化，或无法确认上下文仍保留，改用完整派遣包并重新加载人设。增量只压缩稳定上下文，不压缩权限、安全与验收边界。
+
 ## 专家 → 主控（回报包）
 
 ### 必填
@@ -74,16 +106,26 @@ verify:
 
 ## 主控义务
 
+- 快路径仅适用于主 skill 定义的低风险单文件小改动；主控内部仍要检查明确写授权、单一具体写路径、空外部动作和可判定验收，但不生成虚构派遣包或专家回报。
 - 派遣前维护验收台账：把用户目标拆成可判定项目，记录负责角色、授权范围、期望证据和当前状态。回收后逐项更新，不用专家一句 `done` 代替主控核验。
 - 缺失或非法的 `write_authority` 一律按 `read_only`；没有用户明确写入授权时也只能派 `read_only`。`scoped_write` 的 `write_paths` 缺失、为空或不具体时同样降级为 `read_only`，并把 `write_paths` 视为空。
-- 派遣前检查平台能力并填写 `execution_mode`。只有真实的独立 agent/进程可使用 `real_multi_agent`；主控复用人设时必须标为 `single_agent_simulation`。
+- 派遣前检查平台能力并填写 `execution_mode`。只有真实的独立 agent/进程可使用 `real_multi_agent`；主控自身切换或复用专家人设时必须标为 `single_agent_simulation`。
+- 复用同一 agent、同一 `role` 且确认角色上下文仍保留时，沿用已加载人设并使用增量派遣包；新建 agent、角色变化或上下文是否保留不确定时，重新加载对应人设并使用完整派遣包。两种派遣都不得继承上次权限或外部动作授权。
 - `scope.read_paths` 必须非空、具体并覆盖完成任务所需的最小读取范围。路径使用工作区相对的稳定字面根或其声明式 glob；禁止绝对路径、`~`、`..`、环境变量、命令替换和 shell 扩展表达式。访问现有路径前解析符号链接，解析后越界则返回 `status: needs_handoff`。缺失、为空或不具体时不得读取任务文件/目录；加载本 skill 自带的人设与交接协议不算任务数据读取。
 - `read_only` 要求 `scope.write_paths: []`；`scoped_write` 要求用户已明确授权，且 `scope.write_paths` 非空、具体并与其他并行写者互斥。
 - 任何角色只能读取 `scope.read_paths`、写入 `scope.write_paths`。需要新增读取或写入路径时，先停止对应操作并返回 `status: needs_handoff`；主控取得授权、检查冲突并重新派遣后才能继续。
 - 并行写任务的 `write_paths` 必须互斥；重叠路径、共享 lockfile 与生成产物必须串行。
 - 回收后核对 `status`、`next`、`verify` 和适用证据，再决定收工、补派或改派。`done` 只能表示当前派遣包内所有 acceptance 已通过或被用户明确跳过；`blocked`、`needs_handoff`、`failed`、`not_run` 或缺少证据都不能合并成完成。
+- 单一专家能用授权范围内的可观察证据闭环时直接收口，不自动追加 Vera 或 Reed。只有用户明确要求独立验收，或任务风险/验收标准确实需要独立证据时才追加；复杂、高风险任务继续使用完整派遣、独立验证与严格收口。
 - 向下游传递时，将必要的上游 `summary`、`changes`、`evidence` 放入新派遣包的 `context`。
 - 派遣包、进度与回报跟随用户当前语言；无法判断时使用简体中文。
+
+## `single_agent_simulation` 精简规则
+
+- 不支持真实 subagent 时，不伪造主控与专家之间的 YAML 往返，也不逐角色重复职责、计划和进度。
+- 快路径照常由主控直接完成；标准/严格路径共用一份当前 `write_authority`、`scope` 与验收台账，只在职责确实变化时加载或切换必要人设。
+- 实现后的自检可以作为证据，但必须披露为非独立；不得为了模拟“独立 QA/审查”额外重复同一检查。
+- 安全、权限、scope、外部动作确认、失败停止线和真实完成标准不得因精简而省略。
 
 ## 专家义务：收敛、防自证与真实完成
 

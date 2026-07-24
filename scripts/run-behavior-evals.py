@@ -125,24 +125,43 @@ def validate_expected(case_id: str, expected: dict[str, Any], errors: list[str])
     add_error(errors, isinstance(expected.get("outcome"), str) and bool(expected.get("outcome")), f"{case_id}.outcome must be a string")
     add_error(errors, expected.get("final_status") in FINAL_STATUSES, f"{case_id}.final_status is invalid")
 
+    lead_execution = expected.get("lead_execution", False)
+    add_error(errors, isinstance(lead_execution, bool), f"{case_id}.lead_execution must be boolean")
+
     role_set = validate_dispatch(case_id, expected, errors)
+    dispatch = expected.get("dispatch")
+    dispatch_mode = dispatch.get("mode") if isinstance(dispatch, dict) else None
     authority = expected.get("write_authority")
     if not isinstance(authority, dict):
         errors.append(f"{case_id}.write_authority must be an object")
     else:
         mode = authority.get("mode")
         roles = authority.get("roles")
+        lead_writer = authority.get("lead", False)
         add_error(errors, mode in WRITE_MODES, f"{case_id}.write_authority.mode is invalid")
         add_error(errors, is_string_list(roles), f"{case_id}.write_authority.roles must be a list")
+        add_error(errors, isinstance(lead_writer, bool), f"{case_id}.write_authority.lead must be boolean")
         if is_string_list(roles):
             writer_set = set(roles)
             add_error(errors, writer_set <= role_set, f"{case_id}.writer role was not dispatched")
             if mode == "read_only":
                 add_error(errors, not roles, f"{case_id}.read_only must not name writer roles")
+                add_error(errors, not lead_writer, f"{case_id}.read_only cannot name the lead as writer")
                 add_error(errors, authority.get("write_paths") in (None, []), f"{case_id}.read_only must not define write paths")
             if mode == "scoped_write":
-                add_error(errors, bool(roles), f"{case_id}.scoped_write must name a writer role")
+                if lead_execution:
+                    add_error(errors, not roles, f"{case_id}.lead fast path must not name a specialist writer")
+                    add_error(errors, lead_writer is True, f"{case_id}.lead fast path must name the lead as writer")
+                    add_error(errors, dispatch_mode == "none", f"{case_id}.lead fast path must not dispatch specialists")
+                else:
+                    add_error(errors, bool(roles), f"{case_id}.scoped_write must name a writer role")
+                    add_error(errors, not lead_writer, f"{case_id}.specialist write cannot also name the lead")
                 add_error(errors, is_string_list(authority.get("write_paths"), allow_empty=False), f"{case_id}.scoped_write must define write_paths")
+                if lead_execution and is_string_list(authority.get("write_paths"), allow_empty=False):
+                    add_error(errors, len(authority["write_paths"]) == 1, f"{case_id}.lead fast path must write exactly one file")
+
+    if lead_execution:
+        add_error(errors, expected.get("external_actions") == [], f"{case_id}.lead fast path must declare no external actions")
 
     review = expected.get("review")
     if not isinstance(review, dict):

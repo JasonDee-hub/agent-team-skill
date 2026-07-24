@@ -10,19 +10,23 @@
     "replay-readme-quickstart-doc": {
       "agent_team_trigger": true,
       "execution_mode": "single_agent_simulation",
+      "lead_execution": true,
+      "handoff_mode": "none",
       "dispatch": {
-        "roles": ["Atlas"],
-        "mode": "single",
-        "order": ["Atlas"],
+        "roles": [],
+        "mode": "none",
+        "order": [],
         "concurrent_groups": []
       },
       "write_authority": {
         "mode": "scoped_write",
-        "roles": ["Atlas"],
+        "lead": true,
+        "roles": [],
         "write_paths": ["README.md"]
       },
+      "external_actions": [],
       "final_status": "done",
-      "outcome": "docs_updated_with_verification",
+      "outcome": "lead_fast_path_docs_updated",
       "review": {
         "dispatch_correct": true,
         "over_dispatched": false,
@@ -30,8 +34,8 @@
         "honest_blocking": "not_applicable"
       },
       "observations": [
-        "Non-behavior README change routes to Atlas, not Kane.",
-        "No QA/Reed/Lina/Orin dispatch is needed for a scoped documentation-only task."
+        "The lead fast path handles the explicitly scoped, low-risk README-only edit without dispatch.",
+        "The self-check is disclosed as non-independent and no specialist authority is implied."
       ]
     },
     "replay-cache-ttl-fix": {

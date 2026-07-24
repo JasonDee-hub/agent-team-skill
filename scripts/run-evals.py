@@ -16,6 +16,7 @@ ROLES = {"Atlas", "Mira", "Kane", "Vera", "Reed", "Lina", "Orin"}
 DISPATCH_MODES = {"none", "single", "sequential", "parallel"}
 WRITE_MODES = {"read_only", "scoped_write"}
 EXECUTION_MODES = {"any", "real_multi_agent", "single_agent_simulation"}
+HANDOFF_MODES = {"none", "full", "delta", "simulation_minimal"}
 
 REQUIRED_SECURITY_CASES = {
     "indirect-prompt-injection-is-data",
@@ -32,6 +33,9 @@ REQUIRED_SECURITY_CASES = {
     "acceptance-ledger-rejects-self-certification",
     "repeated-handoff-loop-stops",
     "unchanged-verification-failure-stops",
+    "same-agent-same-role-reuses-persona",
+    "low-risk-single-file-lead-fast-path",
+    "high-risk-single-file-keeps-strict-path",
     "latest-user-redirection-wins",
 }
 
@@ -58,6 +62,16 @@ REQUIRED_SECURITY_INVARIANTS = {
     "unverified_work_is_not_reported_complete",
     "handoff_ping_pong_stops_with_blocker",
     "unchanged_failure_is_not_retried_forever",
+    "same_agent_same_role_reuses_loaded_persona",
+    "persona_reuse_does_not_reuse_authority",
+    "new_or_uncertain_agent_context_reloads_persona",
+    "same_agent_followup_uses_delta_handoff",
+    "low_risk_single_file_write_can_use_lead",
+    "lead_fast_path_is_single_file_only",
+    "lead_fast_path_has_no_external_actions",
+    "single_expert_does_not_auto_add_qa_or_review",
+    "simulation_uses_minimal_role_ceremony",
+    "high_risk_task_keeps_strict_handoff",
     "pragmatic_stability_risks_are_disclosed",
     "latest_user_direction_controls_remaining_work",
 }
@@ -168,15 +182,23 @@ def validate_cases(path: Path) -> tuple[dict[str, dict[str, Any]], list[str]]:
         add_error(errors, isinstance(expected.get("agent_team_trigger"), bool), f"{case_id}.agent_team_trigger must be boolean")
         add_error(errors, isinstance(expected.get("outcome"), str), f"{case_id}.outcome must be a string")
 
+        lead_execution = expected.get("lead_execution", False)
+        add_error(errors, isinstance(lead_execution, bool), f"{case_id}.lead_execution must be boolean")
+        handoff_mode = expected.get("handoff_mode")
+        if handoff_mode is not None:
+            add_error(errors, handoff_mode in HANDOFF_MODES, f"{case_id}.handoff_mode is invalid")
+
         execution_mode = expected.get("execution_mode", "any")
         add_error(errors, execution_mode in EXECUTION_MODES, f"{case_id}.execution_mode is invalid")
 
         role_set: set[str] = set()
+        dispatch_mode: Any = None
         dispatch = expected.get("dispatch")
         if not isinstance(dispatch, dict):
             errors.append(f"{case_id}.dispatch must be an object")
         else:
             mode = dispatch.get("mode")
+            dispatch_mode = mode
             roles = dispatch.get("roles")
             order = dispatch.get("order")
             groups = dispatch.get("concurrent_groups")
@@ -227,12 +249,15 @@ def validate_cases(path: Path) -> tuple[dict[str, dict[str, Any]], list[str]]:
 
         authority_mode: Any = None
         write_paths: Any = None
+        lead_writer = False
         authority = expected.get("write_authority")
         if not isinstance(authority, dict):
             errors.append(f"{case_id}.write_authority must be an object")
         else:
             authority_mode = authority.get("mode")
             add_error(errors, authority_mode in WRITE_MODES, f"{case_id}.write_authority.mode is invalid")
+            lead_writer = authority.get("lead", False)
+            add_error(errors, isinstance(lead_writer, bool), f"{case_id}.write_authority.lead must be boolean")
             roles = authority.get("roles")
             roles_valid = is_string_list(roles)
             writer_set = set(roles) if roles_valid else set()
@@ -244,7 +269,18 @@ def validate_cases(path: Path) -> tuple[dict[str, dict[str, Any]], list[str]]:
                 if authority_mode == "read_only":
                     add_error(errors, not roles, f"{case_id}.read_only must not name writer roles")
                 if authority_mode == "scoped_write":
-                    add_error(errors, bool(roles), f"{case_id}.scoped_write must name a writer role")
+                    if lead_execution:
+                        add_error(errors, not roles, f"{case_id}.lead fast path must not name a specialist writer")
+                    else:
+                        add_error(errors, bool(roles), f"{case_id}.scoped_write must name a writer role")
+            if authority_mode == "read_only":
+                add_error(errors, not lead_writer, f"{case_id}.read_only cannot name the lead as writer")
+            if authority_mode == "scoped_write":
+                if lead_execution:
+                    add_error(errors, lead_writer is True, f"{case_id}.lead fast path must name the lead as writer")
+                    add_error(errors, dispatch_mode == "none", f"{case_id}.lead fast path must not dispatch specialists")
+                else:
+                    add_error(errors, not lead_writer, f"{case_id}.specialist write cannot also name the lead as writer")
             write_paths = authority.get("write_paths")
             if authority_mode == "read_only":
                 add_error(errors, write_paths in (None, []), f"{case_id}.read_only must not define write paths")
@@ -260,6 +296,11 @@ def validate_cases(path: Path) -> tuple[dict[str, dict[str, Any]], list[str]]:
                         all(is_specific_path(path) for path in write_paths),
                         f"{case_id}.write_paths must be specific",
                     )
+                    if lead_execution:
+                        add_error(errors, len(write_paths) == 1, f"{case_id}.lead fast path must write exactly one file")
+
+        if lead_execution:
+            add_error(errors, authority_mode == "scoped_write", f"{case_id}.lead_execution requires scoped_write")
 
         invariants = expected.get("invariants")
         add_error(errors, isinstance(invariants, list) and bool(invariants), f"{case_id}.invariants must be a nonempty list")
@@ -269,7 +310,7 @@ def validate_cases(path: Path) -> tuple[dict[str, dict[str, Any]], list[str]]:
 
         if "external_actions" in expected:
             add_error(errors, is_string_list(expected["external_actions"]), f"{case_id}.external_actions must be a list of strings")
-        if case_id in REQUIRED_SCOPED_CASES:
+        if case_id in REQUIRED_SCOPED_CASES or lead_execution:
             add_error(errors, "scope" in expected, f"{case_id}.scope is required")
         if "scope" in expected:
             scope = expected["scope"]
@@ -303,6 +344,9 @@ def validate_cases(path: Path) -> tuple[dict[str, dict[str, Any]], list[str]]:
                         scope.get("write_paths") == write_paths,
                         f"{case_id}.scope.write_paths must match write_authority.write_paths",
                     )
+                if lead_execution:
+                    add_error(errors, scope.get("external_actions") == [], f"{case_id}.lead fast path cannot perform external actions")
+                    add_error(errors, len(scope.get("write_paths", [])) == 1, f"{case_id}.lead fast path scope must contain one write file")
         if "final_status" in expected:
             add_error(errors, expected["final_status"] in {"done", "blocked", "needs_handoff"}, f"{case_id}.final_status is invalid")
         if "output_language" in expected:
@@ -433,7 +477,7 @@ def main() -> int:
         )
     else:
         print(
-            f"Validated {len(cases)} eval definitions, {len(REQUIRED_SECURITY_CASES)} required security definitions, "
+            f"Validated {len(cases)} eval definitions, {len(REQUIRED_SECURITY_CASES)} required safety/orchestration definitions, "
             "and the Agent Team skill structure. No agent behavior was executed."
         )
     return 0

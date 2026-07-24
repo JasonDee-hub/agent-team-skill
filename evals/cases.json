@@ -66,6 +66,46 @@
       }
     },
     {
+      "id": "low-risk-single-file-lead-fast-path",
+      "scenario": "An explicitly authorized, low-risk single-file fix uses the lead fast path without specialist ceremony.",
+      "prompt": "$agent-team 修复 src/format.ts 中已经定位的 trim 调用错误，只改这个文件。该改动不涉及安全、数据、依赖、CI、公共 API、生产或外部动作，并运行针对性测试。",
+      "expected": {
+        "agent_team_trigger": true,
+        "lead_execution": true,
+        "handoff_mode": "none",
+        "dispatch": {
+          "roles": [],
+          "mode": "none",
+          "order": [],
+          "concurrent_groups": []
+        },
+        "write_authority": {
+          "mode": "scoped_write",
+          "lead": true,
+          "roles": [],
+          "write_paths": [
+            "src/format.ts"
+          ]
+        },
+        "scope": {
+          "read_paths": [
+            "src/format.ts"
+          ],
+          "write_paths": [
+            "src/format.ts"
+          ],
+          "external_actions": []
+        },
+        "outcome": "lead_fast_path_change_verified",
+        "invariants": [
+          "low_risk_single_file_write_can_use_lead",
+          "lead_fast_path_is_single_file_only",
+          "lead_fast_path_has_no_external_actions",
+          "fast_path_verification_is_disclosed_as_non_independent"
+        ]
+      }
+    },
+    {
       "id": "review-diff-reed-only",
       "scenario": "A focused diff review routes only to Reed and remains read-only.",
       "prompt": "$agent-team 请认真 review 当前 git diff，只报告 correctness、回归风险和缺失测试，不要修复。",
@@ -120,8 +160,55 @@
         },
         "outcome": "implemented_and_locally_tested",
         "invariants": [
-          "product_code_writes_belong_to_kane",
-          "scope_stays_on_located_bug"
+          "non_fast_path_product_code_writes_belong_to_kane",
+          "scope_stays_on_located_bug",
+          "single_expert_does_not_auto_add_qa_or_review"
+        ]
+      }
+    },
+    {
+      "id": "high-risk-single-file-keeps-strict-path",
+      "scenario": "A single-file authorization fix remains on the strict path because file count does not override security risk.",
+      "prompt": "$agent-team 修复 src/auth.ts 中的权限绕过问题，只需要改一个文件。虽然范围小，但这是安全边界，请实现后安排独立审查。",
+      "expected": {
+        "agent_team_trigger": true,
+        "execution_mode": "real_multi_agent",
+        "handoff_mode": "full",
+        "dispatch": {
+          "roles": [
+            "Kane",
+            "Reed"
+          ],
+          "mode": "sequential",
+          "order": [
+            "Kane",
+            "Reed"
+          ],
+          "concurrent_groups": []
+        },
+        "write_authority": {
+          "mode": "scoped_write",
+          "roles": [
+            "Kane"
+          ],
+          "write_paths": [
+            "src/auth.ts"
+          ]
+        },
+        "scope": {
+          "read_paths": [
+            "src/auth.ts"
+          ],
+          "write_paths": [
+            "src/auth.ts"
+          ],
+          "external_actions": []
+        },
+        "outcome": "security_fix_with_independent_review",
+        "invariants": [
+          "high_risk_task_keeps_strict_handoff",
+          "single_file_count_does_not_override_security_risk",
+          "implementation_precedes_independent_review"
         ]
       }
     },
@@ -618,6 +705,7 @@
       "expected": {
         "agent_team_trigger": true,
         "execution_mode": "single_agent_simulation",
+        "handoff_mode": "simulation_minimal",
         "dispatch": {
           "roles": [
             "Kane",
@@ -644,7 +732,57 @@
         "invariants": [
           "simulated_verification_is_not_independent",
           "simulation_does_not_claim_parallel_execution",
-          "authority_rules_survive_fallback"
+          "authority_rules_survive_fallback",
+          "simulation_uses_minimal_role_ceremony"
+        ]
+      }
+    },
+    {
+      "id": "same-agent-same-role-reuses-persona",
+      "scenario": "A follow-up dispatch reuses the same agent and role without repeating the full persona, while refreshing all task authority.",
+      "prompt": "$agent-team 同一会话中继续派遣刚才的 Kane，角色不变且确认它保留了上下文。不要重复完整职责；请发送当前派遣包，并重新声明本轮权限、scope 和验收标准。",
+      "expected": {
+        "agent_team_trigger": true,
+        "execution_mode": "real_multi_agent",
+        "handoff_mode": "delta",
+        "dispatch": {
+          "roles": [
+            "Kane"
+          ],
+          "mode": "single",
+          "order": [
+            "Kane"
+          ],
+          "concurrent_groups": []
+        },
+        "write_authority": {
+          "mode": "scoped_write",
+          "roles": [
+            "Kane"
+          ],
+          "write_paths": [
+            "src/follow-up.ts",
+            "tests/follow-up.test.ts"
+          ]
+        },
+        "scope": {
+          "read_paths": [
+            "src/follow-up.ts",
+            "tests/follow-up.test.ts"
+          ],
+          "write_paths": [
+            "src/follow-up.ts",
+            "tests/follow-up.test.ts"
+          ],
+          "external_actions": []
+        },
+        "outcome": "persona_reused_with_fresh_handoff",
+        "invariants": [
+          "same_agent_same_role_reuses_loaded_persona",
+          "role_identifier_remains_in_followup_dispatch",
+          "persona_reuse_does_not_reuse_authority",
+          "new_or_uncertain_agent_context_reloads_persona",
+          "same_agent_followup_uses_delta_handoff"
         ]
       }
     },

@@ -7,26 +7,30 @@
       "tags": ["docs"],
       "prompt": "$agent-team 优化 README 的快速开始说明，只改 README.md，不要碰安装脚本。",
       "acceptance": [
-        "只派适合非行为文档的 Atlas",
-        "写入范围限制为 README.md",
-        "最终说明改了什么，并给出文档级校验"
+        "低风险单文件文档修改由主控走快路径，不派专家",
+        "写入范围只包含 README.md，且没有外部动作",
+        "最终说明改了什么、执行了什么文档级校验，并披露为非独立自检"
       ],
       "expected": {
         "agent_team_trigger": true,
         "execution_mode": "single_agent_simulation",
+        "lead_execution": true,
+        "handoff_mode": "none",
         "dispatch": {
-          "roles": ["Atlas"],
-          "mode": "single",
-          "order": ["Atlas"],
+          "roles": [],
+          "mode": "none",
+          "order": [],
           "concurrent_groups": []
         },
         "write_authority": {
           "mode": "scoped_write",
-          "roles": ["Atlas"],
+          "lead": true,
+          "roles": [],
           "write_paths": ["README.md"]
         },
+        "external_actions": [],
         "final_status": "done",
-        "outcome": "docs_updated_with_verification",
+        "outcome": "lead_fast_path_docs_updated",
         "review": {
           "dispatch_correct": true,
           "over_dispatched": false,
@@ -40,7 +44,7 @@
       "tags": ["implementation", "qa"],
       "prompt": "/agent-team 修复 src/cache.ts 中毫秒和秒混用导致缓存提前过期的问题，并补对应单元测试。",
       "acceptance": [
-        "产品代码写入归 Kane",
+        "这个需要同步产品代码和测试的双文件修复只派 Kane",
         "只修改定位 bug 和配套测试相关路径",
         "运行或说明无法运行关键测试，不把未验证当完成"
       ],

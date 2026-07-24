@@ -114,6 +114,26 @@ for case in broad_write_path["cases"]:
         case["expected"]["write_authority"]["write_paths"] = ["/**"]
 require_failure(run(broad_write_path), "scoped-write contract with a global path")
 
+lead_fast_path_two_files = copy.deepcopy(BASE_CASES)
+for case in lead_fast_path_two_files["cases"]:
+    if case["id"] == "low-risk-single-file-lead-fast-path":
+        paths = ["src/format.ts", "tests/format.test.ts"]
+        case["expected"]["write_authority"]["write_paths"] = paths
+        case["expected"]["scope"]["write_paths"] = paths
+require_failure(run(lead_fast_path_two_files), "lead fast path with two write files")
+
+lead_fast_path_external_action = copy.deepcopy(BASE_CASES)
+for case in lead_fast_path_external_action["cases"]:
+    if case["id"] == "low-risk-single-file-lead-fast-path":
+        case["expected"]["scope"]["external_actions"] = ["git push origin main"]
+require_failure(run(lead_fast_path_external_action), "lead fast path with an external action")
+
+lead_fast_path_without_lead_writer = copy.deepcopy(BASE_CASES)
+for case in lead_fast_path_without_lead_writer["cases"]:
+    if case["id"] == "low-risk-single-file-lead-fast-path":
+        case["expected"]["write_authority"]["lead"] = False
+require_failure(run(lead_fast_path_without_lead_writer), "lead fast path without explicit lead writer")
+
 unsafe_paths = (
     "../src/**",
     "/Users/**",

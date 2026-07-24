@@ -1,4 +1,4 @@
 interface:
   display_name: "Agent Team"
-  short_description: "Scoped expert orchestration with evidence-based acceptance"
-  default_prompt: "Use $agent-team to coordinate only the needed experts, enforce scoped authority, and verify completion with evidence in my language."
+  short_description: "Efficient scoped orchestration with evidence-based acceptance"
+  default_prompt: "Use $agent-team to take the fastest safe path, coordinate only the needed experts, enforce current authority, and verify completion with evidence in my language."
