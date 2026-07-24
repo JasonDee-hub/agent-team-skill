@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import copy
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -51,6 +52,15 @@ def run_behavior(cases: dict[str, Any], actual: dict[str, Any]) -> subprocess.Co
         return subprocess.run(command, check=False, capture_output=True, text=True)
 
 
+def run_with_kane_profile(profile: str) -> subprocess.CompletedProcess[str]:
+    with tempfile.TemporaryDirectory(prefix="agent-team-skill-test.") as temp_dir:
+        skill = Path(temp_dir) / "agent-team"
+        shutil.copytree(REPO / "agent-team", skill)
+        (skill / "references/experts/fullstack-engineer.md").write_text(profile, encoding="utf-8")
+        command = [sys.executable, str(RUNNER), "--skill", str(skill)]
+        return subprocess.run(command, check=False, capture_output=True, text=True)
+
+
 def require_success(result: subprocess.CompletedProcess[str], label: str) -> None:
     if result.returncode != 0:
         raise AssertionError(f"{label} failed:\n{result.stderr}")
@@ -62,6 +72,48 @@ def require_failure(result: subprocess.CompletedProcess[str], label: str) -> Non
 
 
 require_success(run(BASE_CASES), "valid eval definitions")
+
+kane_profile = (REPO / "agent-team/references/experts/fullstack-engineer.md").read_text(encoding="utf-8")
+boundary_rule = "- 区分 absent/empty 与一般 falsy；除非契约明确排除，否则保留 `0`、`false` 等合法值，禁止用宽泛 falsy 判断代替缺失/空判断\n"
+require_failure(run_with_kane_profile(kane_profile.replace(boundary_rule, "")), "Kane profile without boundary-value rule")
+
+performance_mutations = {
+    "clear-code-fix-kane-only": ("initial_dispatches", 2),
+    "same-agent-same-role-reuses-persona": ("restate_scope", False),
+    "independent-read-only-parallel": ("parallel_when_independent", False),
+    "strict-review-fix-targeted-delta": ("review_scope", "full_review"),
+}
+
+for case_id, (field, invalid_value) in performance_mutations.items():
+    weakened_performance_contract = copy.deepcopy(BASE_CASES)
+    for case in weakened_performance_contract["cases"]:
+        if case["id"] == case_id:
+            case["expected"]["efficiency"][field] = invalid_value
+    require_failure(run(weakened_performance_contract), f"weakened performance contract: {case_id}.{field}")
+
+acceptance_conflict_reported_done = copy.deepcopy(BASE_CASES)
+for case in acceptance_conflict_reported_done["cases"]:
+    if case["id"] == "strict-review-fix-targeted-delta":
+        case["expected"]["efficiency"]["acceptance_conflict_blocks_done"] = False
+require_failure(run(acceptance_conflict_reported_done), "acceptance-conflicting risk reported as done")
+
+acceptance_conflict_skips_delta_fix = copy.deepcopy(BASE_CASES)
+for case in acceptance_conflict_skips_delta_fix["cases"]:
+    if case["id"] == "strict-review-fix-targeted-delta":
+        case["expected"]["efficiency"]["acceptance_conflict_requires_delta_fix"] = False
+require_failure(run(acceptance_conflict_skips_delta_fix), "acceptance conflict skips same-Kane delta fix")
+
+missing_performance_invariant = copy.deepcopy(BASE_CASES)
+for case in missing_performance_invariant["cases"]:
+    if case["id"] == "clear-code-fix-kane-only":
+        case["expected"]["invariants"].remove("lead_does_not_repeat_sufficient_evidence")
+require_failure(run(missing_performance_invariant), "missing performance invariant")
+
+missing_acceptance_conflict_invariant = copy.deepcopy(BASE_CASES)
+for case in missing_acceptance_conflict_invariant["cases"]:
+    if case["id"] == "strict-review-fix-targeted-delta":
+        case["expected"]["invariants"].remove("acceptance_conflicting_risk_cannot_be_downgraded_to_risks")
+require_failure(run(missing_acceptance_conflict_invariant), "missing acceptance-conflict invariant")
 
 read_only_write = copy.deepcopy(BASE_CASES)
 read_only_write["cases"][0]["expected"]["write_authority"]["write_paths"] = ["**"]

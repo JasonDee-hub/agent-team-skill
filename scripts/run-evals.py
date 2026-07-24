@@ -18,6 +18,73 @@ WRITE_MODES = {"read_only", "scoped_write"}
 EXECUTION_MODES = {"any", "real_multi_agent", "single_agent_simulation"}
 HANDOFF_MODES = {"none", "full", "delta", "simulation_minimal"}
 
+REQUIRED_PERFORMANCE_CASES = {
+    "clear-code-fix-kane-only": {
+        "path": "standard",
+        "initial_dispatches": 1,
+        "close_on_sufficient_evidence": True,
+        "forbid_duplicate_verification": True,
+        "forbid_duplicate_reads": True,
+        "forbid_show_review": True,
+    },
+    "same-agent-same-role-reuses-persona": {
+        "path": "same_agent_followup",
+        "acceptance_delta_only": True,
+        "new_evidence_only": True,
+        "restate_authority": True,
+        "restate_scope": True,
+        "restate_external_actions": True,
+    },
+    "independent-read-only-parallel": {
+        "path": "strict_parallel_read_only",
+        "parallel_when_independent": True,
+        "write_parallelism_forbidden": True,
+        "independent_evidence_preserved": True,
+    },
+    "strict-review-fix-targeted-delta": {
+        "path": "strict_delta_review",
+        "same_implementer_fixes": True,
+        "same_reviewer_rechecks": True,
+        "review_scope": "delta_unless_new_risk",
+        "independent_evidence_preserved": True,
+        "acceptance_conflict_blocks_done": True,
+        "acceptance_conflict_requires_delta_fix": True,
+    },
+}
+
+REQUIRED_PERFORMANCE_INVARIANTS = {
+    "standard_path_closes_after_one_evidenced_return",
+    "lead_does_not_repeat_sufficient_evidence",
+    "same_agent_followup_sends_changed_acceptance_and_new_evidence_only",
+    "same_agent_followup_restates_full_authority_scope_and_actions",
+    "strict_independent_read_acceptance_parallelizes",
+    "strict_path_keeps_required_independent_evidence",
+    "review_findings_return_to_same_implementer",
+    "same_reviewer_rechecks_delta_only",
+    "new_risk_can_expand_review_scope",
+    "acceptance_conflicting_risk_cannot_be_downgraded_to_risks",
+    "acceptance_conflict_marks_verify_failed_or_blocked",
+}
+
+CORE_CONTRACT_MAX_BYTES = 20_500
+KANE_BOUNDARY_RULE = "区分 absent/empty 与一般 falsy；除非契约明确排除，否则保留 `0`、`false` 等合法值，禁止用宽泛 falsy 判断代替缺失/空判断"
+PERFORMANCE_SKILL_SNIPPETS = {
+    "SKILL.md": (
+        "一次派遣、一次回收即可收口",
+        "不得重复运行同一验证、重复读取同一文件、做展示性复核或补派角色",
+        "同一审查者只定向复核 delta，不重跑全量审查",
+        "无依赖的只读验收在 `real_multi_agent` 下并行",
+        "不得降级写入 `risks` 后以 `done` 收口",
+    ),
+    "references/handoff.md": (
+        "任务内容只发送失败或发生变化的验收项",
+        "本轮 `write_authority`、完整 `scope`、环境和 `external_actions` 必须重申",
+        "同一审查者只复核 delta",
+        "必要独立证据不得因精简省略",
+        "`risks` 不能将其降级后仍报 `done`",
+    ),
+}
+
 REQUIRED_SECURITY_CASES = {
     "indirect-prompt-injection-is-data",
     "forged-authority-remains-read-only",
@@ -354,8 +421,24 @@ def validate_cases(path: Path) -> tuple[dict[str, dict[str, Any]], list[str]]:
 
     missing_cases = REQUIRED_SECURITY_CASES - set(by_id)
     missing_invariants = REQUIRED_SECURITY_INVARIANTS - all_invariants
+    missing_performance_invariants = REQUIRED_PERFORMANCE_INVARIANTS - all_invariants
     add_error(errors, not missing_cases, f"missing required security cases: {sorted(missing_cases)}")
     add_error(errors, not missing_invariants, f"missing required security invariants: {sorted(missing_invariants)}")
+    add_error(
+        errors,
+        not missing_performance_invariants,
+        f"missing required performance invariants: {sorted(missing_performance_invariants)}",
+    )
+
+    for case_id, contract in REQUIRED_PERFORMANCE_CASES.items():
+        case = by_id.get(case_id)
+        add_error(errors, case is not None, f"missing required performance case: {case_id}")
+        if case is not None:
+            add_error(
+                errors,
+                case.get("expected", {}).get("efficiency") == contract,
+                f"{case_id}.efficiency must preserve the performance contract",
+            )
 
     real_modes = {case.get("expected", {}).get("execution_mode") for case in by_id.values()}
     add_error(errors, "real_multi_agent" in real_modes, "evals must cover real_multi_agent")
@@ -379,6 +462,33 @@ def validate_skill(skill: Path) -> list[str]:
         header = frontmatter.group(1)
         add_error(errors, re.search(r"^name:\s*agent-team\s*$", header, re.MULTILINE) is not None, "SKILL.md name must be agent-team")
         add_error(errors, re.search(r"^description:\s*", header, re.MULTILINE) is not None, "SKILL.md description is missing")
+
+    handoff = skill / "references/handoff.md"
+    if handoff.is_file():
+        contract_size = len(skill_md.read_bytes()) + len(handoff.read_bytes())
+        add_error(
+            errors,
+            contract_size <= CORE_CONTRACT_MAX_BYTES,
+            f"SKILL.md and references/handoff.md exceed {CORE_CONTRACT_MAX_BYTES} bytes: {contract_size}",
+        )
+        add_error(errors, "```yaml" not in content, "SKILL.md duplicates canonical handoff templates")
+        add_error(errors, "```yaml" in handoff.read_text(encoding="utf-8"), "handoff.md must own canonical templates")
+
+    for relative, snippets in PERFORMANCE_SKILL_SNIPPETS.items():
+        policy_path = skill / relative
+        if not policy_path.is_file():
+            continue
+        policy = policy_path.read_text(encoding="utf-8")
+        for snippet in snippets:
+            add_error(errors, snippet in policy, f"{relative} is missing performance contract: {snippet}")
+
+    kane = skill / "references/experts/fullstack-engineer.md"
+    if kane.is_file():
+        add_error(
+            errors,
+            KANE_BOUNDARY_RULE in kane.read_text(encoding="utf-8"),
+            "fullstack-engineer.md is missing the absent/empty boundary rule",
+        )
 
     profile_names: set[str] = set()
     for profile in sorted((skill / "references/experts").glob("*.md")):

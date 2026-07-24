@@ -86,16 +86,16 @@ Agent Team 是一个“主控 + 专家”的编排技能，不是固定流水线
    微型/只读问题，以及授权明确、不涉及安全/数据/依赖/CI/生产等风险的单文件小改动，由主控走快路径直接完成；单一领域默认只派一位专家；复合或高风险任务才进入严格路径。
 
 2. **按需派遣专家**
-   不默认全员上场，也不自动追加 QA 或审查。只有用户明确要求独立验收，或风险确实需要独立证据时才增加 Vera/Reed。独立只读任务可并行；写任务仅在路径互斥时并行。
+   不默认全员上场，也不自动追加 QA 或审查。标准路径的一位专家逐项通过且证据充分时，一次派遣、一次回收后直接收口，不重复验证、读取或做展示性复核。只有用户明确要求独立验收，或风险确实需要独立证据时才增加 Vera/Reed。
 
 3. **先声明权限边界**
-   新 agent 使用完整派遣包；复用同一 agent/同一角色时只发送任务变化和必要新证据，但仍完整重申 `write_authority`、读写路径与外部动作边界。缺少明确写授权时，一律按只读处理。
+   新 agent 使用完整派遣包；复用同一 agent/同一角色时只发送失败或变化的验收项与必要新证据，但仍完整重申 `write_authority`、读写路径、环境与外部动作边界。缺少明确写授权时，一律按只读处理。
 
 4. **关键节点同步进展**
    只有在开始派遣、阻塞或改派、长阶段完成可验证里程碑、最终收口时才汇报，避免循环发送空状态。
 
 5. **收口验收**
-   汇总已派角色、交付内容、验证证据和残留风险；如果证据不足，再补派相关专家。
+   严格路径只增加验收必需的独立角色，无依赖只读验收可并行。与验收或既有明确行为冲突的风险必须判为失败/阻塞，不能降级进 `risks` 后报完成；交同一 Kane 增量修复后，由同一审查者只复核 delta，仅出现新风险时扩大范围。
 
 输出跟随用户当前使用的语言；无法判断时才默认简体中文。医疗、法律、财务、监管等高风险域外任务仅提供中立提纲、有来源的清单/问题，或须由合格专业人员复核的非权威草稿。
 
@@ -172,7 +172,7 @@ python3 scripts/test-evals.py
 git diff --check
 ```
 
-`scripts/run-evals.py` 默认只校验 eval 定义、必需安全/编排覆盖和 skill 结构，**不会执行 agent 行为**；使用 `--actual <results.json>` 才会把外部 harness 产生的机器可读执行结果与预期逐项比较。`scripts/run-behavior-evals.py` 校验真实型任务回放结果 JSON，也不直接执行 agent。GitHub Actions 会在 macOS 与 Ubuntu 上运行离线 contract、安装器、回放结果和结构检查，不把它们冒充真实 agent eval。
+`scripts/run-evals.py` 默认校验 eval 定义、安全/编排与性能契约、核心协议体积和 skill 结构，**不会执行 agent 行为**；性能负例覆盖标准路径一次收口、增量跟进边界、严格路径只读并行、delta 复审及 acceptance 冲突收口。使用 `--actual <results.json>` 才会把外部 harness 产生的机器可读执行结果与预期逐项比较。`scripts/run-behavior-evals.py` 校验真实型任务回放结果 JSON，也不直接执行 agent。GitHub Actions 会在 macOS 与 Ubuntu 上运行离线 contract、安装器、回放结果和结构检查，不把它们冒充真实 agent eval。
 
 ---
 
@@ -246,16 +246,16 @@ Poor fits:
    Tiny/read-only requests and explicitly authorized, low-risk single-file edits that do not touch security, data, dependencies, CI, or production use the lead fast path. Single-domain work gets at most one specialist by default; compound or high-risk work uses the strict path.
 
 2. **Dispatch experts on demand**
-   The full roster is not used by default, and QA/review is not added automatically. Vera or Reed is added only when the user requests independent acceptance or the risk requires independent evidence. Independent read-only work may run in parallel; writes require disjoint paths.
+   The full roster is not used by default, and QA/review is not added automatically. On the standard path, one specialist's fully evidenced return closes the task after one dispatch and collection; the lead does not repeat verification, reads, or ceremonial review. Vera or Reed is added only when the user requests independent acceptance or risk requires it.
 
 3. **Declare authority first**
-   A new agent receives a full handoff. Reusing the same agent/role sends only task deltas and new evidence, while fully restating `write_authority`, path scope, and external-action boundaries. Without explicit write authority, the task is read-only.
+   A new agent receives a full handoff. Reusing the same agent/role sends only failed or changed acceptance items and necessary new evidence, while fully restating `write_authority`, path scope, environment, and external-action boundaries. Without explicit write authority, the task is read-only.
 
 4. **Report meaningful progress**
    Updates are sent when dispatch starts, work is blocked or reassigned, a long phase completes a verifiable milestone, and the team finishes. Repetitive empty status updates are avoided.
 
 5. **Wrap up with acceptance evidence**
-   The final response summarizes dispatched roles, deliverables, verification evidence, and remaining risks. If evidence is insufficient, the lead dispatches the relevant expert again.
+   The strict path adds only independently necessary roles and parallelizes independent read-only acceptance. A risk that conflicts with acceptance or established behavior is failed/blocked, never downgraded into `risks` and reported done. It returns to the same Kane, then the same reviewer checks only the delta unless a new risk expands scope.
 
 Output follows the user's language, falling back to Simplified Chinese only when unclear. For high-stakes medical, legal, financial, or regulatory work, Atlas is limited to neutral outlines, source-backed checklists/questions, or non-authoritative drafts requiring qualified review.
 
@@ -332,7 +332,7 @@ python3 scripts/test-evals.py
 git diff --check
 ```
 
-By default, `scripts/run-evals.py` validates eval definitions, required safety/orchestration coverage, and skill structure; it **does not execute agent behavior**. Pass `--actual <results.json>` to compare machine-readable results produced by an external harness against expectations. `scripts/run-behavior-evals.py` validates realistic task replay result JSON and also does not execute agents directly. GitHub Actions runs the offline contract, installer, replay-result, and structure checks on macOS and Ubuntu without presenting them as live agent evals.
+By default, `scripts/run-evals.py` validates eval definitions, safety/orchestration and performance contracts, the core-protocol byte budget, and skill structure; it **does not execute agent behavior**. Performance negatives cover one-return standard closure, follow-up boundaries, strict read-only parallelism, delta review, and acceptance-conflicting completion. Pass `--actual <results.json>` to compare machine-readable results produced by an external harness against expectations. `scripts/run-behavior-evals.py` validates realistic task replay result JSON and also does not execute agents directly. GitHub Actions runs the offline contract, installer, replay-result, and structure checks on macOS and Ubuntu without presenting them as live agent evals.
 
 ---
 

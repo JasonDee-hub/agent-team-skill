@@ -158,11 +158,21 @@
             "tests/cache.test.ts"
           ]
         },
+        "efficiency": {
+          "path": "standard",
+          "initial_dispatches": 1,
+          "close_on_sufficient_evidence": true,
+          "forbid_duplicate_verification": true,
+          "forbid_duplicate_reads": true,
+          "forbid_show_review": true
+        },
         "outcome": "implemented_and_locally_tested",
         "invariants": [
           "non_fast_path_product_code_writes_belong_to_kane",
           "scope_stays_on_located_bug",
-          "single_expert_does_not_auto_add_qa_or_review"
+          "single_expert_does_not_auto_add_qa_or_review",
+          "standard_path_closes_after_one_evidenced_return",
+          "lead_does_not_repeat_sufficient_evidence"
         ]
       }
     },
@@ -209,6 +219,64 @@
           "high_risk_task_keeps_strict_handoff",
           "single_file_count_does_not_override_security_risk",
           "implementation_precedes_independent_review"
+        ]
+      }
+    },
+    {
+      "id": "strict-review-fix-targeted-delta",
+      "scenario": "A strict-path review finding returns to the same implementer, then the same reviewer checks only the delta unless a new risk appears.",
+      "prompt": "$agent-team 严格路径的 Reed 已发现一个问题。让同一 Kane 增量修复，再由同一 Reed 只复核本次 delta；除非出现新风险，不要重跑全量审查。",
+      "expected": {
+        "agent_team_trigger": true,
+        "execution_mode": "real_multi_agent",
+        "handoff_mode": "delta",
+        "dispatch": {
+          "roles": [
+            "Kane",
+            "Reed"
+          ],
+          "mode": "sequential",
+          "order": [
+            "Kane:delta-fix",
+            "Reed:delta-review"
+          ],
+          "concurrent_groups": []
+        },
+        "write_authority": {
+          "mode": "scoped_write",
+          "roles": [
+            "Kane"
+          ],
+          "write_paths": [
+            "src/auth.ts"
+          ]
+        },
+        "scope": {
+          "read_paths": [
+            "src/auth.ts"
+          ],
+          "write_paths": [
+            "src/auth.ts"
+          ],
+          "external_actions": []
+        },
+        "efficiency": {
+          "path": "strict_delta_review",
+          "same_implementer_fixes": true,
+          "same_reviewer_rechecks": true,
+          "review_scope": "delta_unless_new_risk",
+          "independent_evidence_preserved": true,
+          "acceptance_conflict_blocks_done": true,
+          "acceptance_conflict_requires_delta_fix": true
+        },
+        "outcome": "strict_fix_with_targeted_delta_review",
+        "invariants": [
+          "strict_path_keeps_required_independent_evidence",
+          "review_findings_return_to_same_implementer",
+          "same_reviewer_rechecks_delta_only",
+          "new_risk_can_expand_review_scope",
+          "acceptance_conflicting_risk_cannot_be_downgraded_to_risks",
+          "acceptance_conflict_marks_verify_failed_or_blocked"
         ]
       }
     },
@@ -354,10 +422,17 @@
           "mode": "read_only",
           "roles": []
         },
+        "efficiency": {
+          "path": "strict_parallel_read_only",
+          "parallel_when_independent": true,
+          "write_parallelism_forbidden": true,
+          "independent_evidence_preserved": true
+        },
         "outcome": "merged_independent_reports",
         "invariants": [
           "only_independent_read_tasks_parallelize",
-          "each_report_keeps_its_own_evidence"
+          "each_report_keeps_its_own_evidence",
+          "strict_independent_read_acceptance_parallelizes"
         ]
       }
     },
@@ -776,13 +851,23 @@
           ],
           "external_actions": []
         },
+        "efficiency": {
+          "path": "same_agent_followup",
+          "acceptance_delta_only": true,
+          "new_evidence_only": true,
+          "restate_authority": true,
+          "restate_scope": true,
+          "restate_external_actions": true
+        },
         "outcome": "persona_reused_with_fresh_handoff",
         "invariants": [
           "same_agent_same_role_reuses_loaded_persona",
           "role_identifier_remains_in_followup_dispatch",
           "persona_reuse_does_not_reuse_authority",
           "new_or_uncertain_agent_context_reloads_persona",
-          "same_agent_followup_uses_delta_handoff"
+          "same_agent_followup_uses_delta_handoff",
+          "same_agent_followup_sends_changed_acceptance_and_new_evidence_only",
+          "same_agent_followup_restates_full_authority_scope_and_actions"
         ]
       }
     },
