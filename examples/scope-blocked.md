@@ -61,4 +61,3 @@ next:
 阻塞原因：需要用户明确扩展 write_paths 到 package-lock.json
 最小下一步：用户确认是否允许 Kane 写入 package-lock.json
 ```
-

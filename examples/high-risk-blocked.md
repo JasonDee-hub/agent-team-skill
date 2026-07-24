@@ -51,4 +51,3 @@ verify:
   result: passed
   evidence: 收口中列明复核要求
 ```
-

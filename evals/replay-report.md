@@ -1,7 +1,7 @@
 # Agent Team 真实型任务回放报告
 
-日期：2026-07-24  
-方法：`manual_rule_replay`，按当前工作区内 Agent Team skill 规则对真实型需求做可复核回放，并用 `scripts/run-behavior-evals.py` 校验 `evals/replay-results.json`。  
+日期：2026-07-24
+方法：`manual_rule_replay`，按当前工作区内 Agent Team skill 规则对真实型需求做可复核回放，并用 `scripts/run-behavior-evals.py` 校验 `evals/replay-results.json`。
 说明：本报告记录的是行为回放基线，不是脚本直接执行真实 agent。真实 agent runner 可输出同结构 JSON 后复用同一 harness 校验。
 
 ## 汇总
@@ -41,4 +41,3 @@
 ```bash
 python3 scripts/run-behavior-evals.py --actual path/to/results.json
 ```
-
