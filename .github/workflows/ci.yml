@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check syntax
+        run: |
+          bash -n install.sh scripts/install-from-github.sh scripts/test-install.sh
+          python3 -m py_compile scripts/run-evals.py scripts/run-behavior-evals.py scripts/test-evals.py
+
+      - name: Test isolated installations
+        run: bash scripts/test-install.sh
+
+      - name: Validate eval contracts and skill structure
+        run: python3 scripts/run-evals.py
+
+      - name: Validate behavior replay results
+        run: python3 scripts/run-behavior-evals.py
+
+      - name: Test eval runner failure modes
+        run: python3 scripts/test-evals.py
+
+      - name: Check whitespace
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [[ -n "$BASE_SHA" && ! "$BASE_SHA" =~ ^0+$ ]]; then
+            git diff --check "$BASE_SHA" HEAD
+          else
+            git diff-tree --check --root -r HEAD
+          fi

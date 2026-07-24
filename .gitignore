@@ -3,11 +3,10 @@
 .idea/
 .vscode/
 
-# Local keys / env (never commit)
+# Local secrets / env (never commit)
 *.key
 .env
 .seal-key
 
-# Local sealing helpers and output
-scripts/unseal.sh
+# Keep local historical archives out of version control.
 sealed/

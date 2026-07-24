@@ -1,10 +1,10 @@
-# Agent Team Skills
+# Agent Team Skill
 
 [中文](#中文) · [English](#english)
 
-面向软件开发的多智能体专家团技能包，可用于 **Cursor** / **Claude Code** / **Codex**。
+面向软件开发的多智能体专家团技能包。安装后可在 **Cursor** / **Claude Code** / **Codex** 中让主控按任务需要调度专家，完成调研、实现、测试、审查、UI 复现、排障和文档工作。
 
-A multi-agent expert-team skill pack for software development. Works with **Cursor**, **Claude Code**, and **Codex**.
+A multi-agent expert-team skill pack for software development. After installation, a lead agent can coordinate specialists in **Cursor**, **Claude Code**, and **Codex** for research, implementation, testing, review, UI reproduction, troubleshooting, and docs.
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Cursor-blue?style=flat-square" />
@@ -18,119 +18,128 @@ A multi-agent expert-team skill pack for software development. Works with **Curs
 
 ## 中文
 
-### 设计初衷
+### 快速开始
 
-一个人开发时，往往要在「查代码、写实现、跑测试、审 diff、点界面、排故障、写说明」之间来回切换。上下文容易乱，角色也容易混——写代码的顺手改文档，排错的又开始大重构。
-
-**Agent Team** 的目标很简单：
-
-- 你只说清目标；
-- 由主控按任务需要召唤合适的专家；
-- 专家各司其职，协作完成，而不是一个模型包办所有角色。
-
-它不是让你手动轮岗点名；按平台使用对应入口，就能启动一整场分工明确的协作。
-
-### 它如何运作
-
-1. **你提出目标**  
-   例如：「给登录页加验证码，并补上验证证据」。
-
-2. **主控分析需求**  
-   判断这次真正需要谁：调研？写代码？测试？审查？点 UI？排障？写文档？
-
-3. **按需派遣专家**  
-   只叫需要的人，不必全员上场，也没有固定流水线顺序。独立只读任务可并行；写任务仅在路径互斥时并行，重叠范围必须串行。
-
-4. **在关键节点汇报**
-
-   开始派遣、发生阻塞或改派、以及完成收口时会同步进展，不循环发送空状态。
-
-5. **收口验收**  
-   汇总改动、验证结果与残留风险，必要时再补派。
-
-### 专家一览
-
-| 专家 | 职责 |
-|------|------|
-| 万事通 Atlas | 文档、清单、说明、综合杂务 |
-| 调研员 Mira | 摸清代码与环境、定位入口 |
-| 全栈工程师 Kane | 前后端实现与改码 |
-| QA Vera | 执行测试/构建并整理结果 |
-| 代码审查员 Reed | 代码审查与风险提醒 |
-| UI 操作者 Lina | 浏览器操作与界面问题复现 |
-| 故障诊断工程师 Orin | 复现问题、分析根因 |
-
-### 如何应用
-
-适合这些场景：
-
-- 功能开发与小迭代  
-- Bug 修复与回归验证  
-- 提交前的代码审查  
-- 界面问题复现  
-- 发布说明、检查清单等文档杂务  
-- 陌生仓库的快速摸底  
-
-不同平台的调用方式如下。
-
-**Cursor**
-
-```text
-/agent-team 把登录页改成支持验证码，并补上关键测试证据
-```
-
-**Claude Code**
-
-```text
-/agent-team 审查最近 diff 的安全风险
-```
-
-**Codex**
-
-```text
-$agent-team 写一份本周发布说明和上线检查清单
-```
-
-Codex 也支持自然语言触发，例如：`请用专家团帮我定位这个报错的根因，并给出最小修复建议。`
-
-### 安装
-
-把本仓库地址发给别人后，用下面命令安装即可（**无需密钥，需要 Git**）。
-
-**Cursor（推荐）**
+默认安装到 Cursor：
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash
 ```
 
-Cursor 专家人设会安装为 `~/.cursor/agents/agent-team-*.md`，不会占用 `qa.md` 等通用文件名。
+安装到其它平台：
 
-若 `curl` 拉到旧缓存，可改用：
+```bash
+# Claude Code
+curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash -s -- --claude
+
+# Codex
+curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash -s -- --codex
+
+# 一次安装全部目标
+curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash -s -- --all
+```
+
+安装不需要 API key，但需要本机可用的 `git` 与 `tar`。若 `curl` 命中旧缓存，可改用：
 
 ```bash
 git clone --depth 1 https://github.com/JasonDee-hub/agent-team-skill.git /tmp/agent-team-skill \
   && bash /tmp/agent-team-skill/install.sh
 ```
 
-**Claude Code**
+安装后按平台调用：
+
+| 平台 | 入口 | 示例 |
+|------|------|------|
+| Cursor | `/agent-team` | `/agent-team 给登录页加验证码，并补上关键测试证据` |
+| Claude Code | `/agent-team` | `/agent-team 审查最近 diff 的安全风险` |
+| Codex | `$agent-team` | `$agent-team 写一份本周发布说明和上线检查清单` |
+
+Codex 也支持自然语言触发，例如：`请用专家团帮我定位这个报错的根因，并给出最小修复建议。`
+
+### 这是什么
+
+Agent Team 是一个“主控 + 专家”的编排技能，不是固定流水线，也不是让你手动轮岗点名。
+
+你只需要说清目标。主控会判断这次真正需要哪些角色，并在任务开始时披露执行模式：
+
+- `real_multi_agent`：平台支持真实独立智能体/进程，专家可以按依赖协作；只有这种模式下的 QA 或审查才能称为独立验证。
+- `single_agent_simulation`：平台不支持独立智能体时，主控按专家人设分阶段串行执行；不会伪称并行或独立验收。
+
+适合使用 Agent Team 的场景：
+
+- 功能开发与小迭代
+- Bug 修复与回归验证
+- 提交前的代码审查
+- UI 问题复现与取证
+- 陌生仓库快速摸底
+- 发布说明、检查清单等开发向文档工作
+
+不适合使用的场景：
+
+- 你只是想让一个普通 subagent 完成单一回答，没有专家分工或独立验收需求。
+- 你要求医疗、法律、财务、监管等高风险领域的权威成品。
+- 你要求提交、发布、部署、生产写入等外部高影响动作，但没有给出明确授权。
+
+### 工作方式
+
+1. **判断任务层级**
+   微型或只读问题由主控直接完成；单一领域只派一位专家；复合或高风险任务才增加必要专家。
+
+2. **按需派遣专家**
+   不默认全员上场。独立只读任务可并行；写任务仅在路径互斥时并行，重叠范围必须串行。
+
+3. **先声明权限边界**
+   每个派遣包都要包含 `write_authority`、`scope.read_paths`、`scope.write_paths` 和 `scope.external_actions`。缺少明确写授权时，一律按只读处理。
+
+4. **关键节点同步进展**
+   只有在开始派遣、阻塞或改派、长阶段完成可验证里程碑、最终收口时才汇报，避免循环发送空状态。
+
+5. **收口验收**
+   汇总已派角色、交付内容、验证证据和残留风险；如果证据不足，再补派相关专家。
+
+输出跟随用户当前使用的语言；无法判断时才默认简体中文。医疗、法律、财务、监管等高风险域外任务仅提供中立提纲、有来源的清单/问题，或须由合格专业人员复核的非权威草稿。
+
+### 专家角色
+
+| 专家 | 职责 |
+|------|------|
+| 万事通 Atlas | 文档、清单、一次性非产品辅助工作 |
+| 调研员 Mira | 摸清代码与环境、定位入口 |
+| 全栈工程师 Kane | 产品代码/配置、CI、构建、依赖与技术方案 |
+| QA Vera | 测试、构建、纯测试改动与验证证据 |
+| 代码审查员 Reed | 代码审查与风险提醒 |
+| UI 操作者 Lina | 浏览器操作与界面问题复现 |
+| 故障诊断工程师 Orin | 复现问题、分析根因 |
+
+### 示例与行为回放
+
+典型交付样本放在 [`examples/`](examples/)：
+
+- 功能实现后独立 QA：[feature-with-independent-qa.md](examples/feature-with-independent-qa.md)
+- 只读安全审查：[readonly-review.md](examples/readonly-review.md)
+- 写入范围不足时如实阻塞：[scope-blocked.md](examples/scope-blocked.md)
+- UI 问题复现与取证：[ui-reproduction.md](examples/ui-reproduction.md)
+- 高风险域外任务阻塞：[high-risk-blocked.md](examples/high-risk-blocked.md)
+
+真实型任务回放基线放在 `evals/replay-cases.json`，当前包含 15 条覆盖文档、实现、QA、审查、UI、排障、计划、并行、安全、scope 和阻塞的需求。`evals/replay-results.json` 记录本轮按当前 skill 规则得到的机器可读行为结果，字段包括是否正确派遣、是否过度派遣、是否如实阻塞和是否真实完成。
+
+验证回放结果：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash -s -- --claude
+python3 scripts/run-behavior-evals.py
 ```
 
-**Codex**
+接入真实 agent runner 时，让 runner 输出同样结构的实际结果 JSON，然后执行：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash -s -- --codex
+python3 scripts/run-behavior-evals.py --actual path/to/results.json
 ```
 
-一次装全部目标：
+该脚本校验行为结果 JSON，不直接执行 agent。真实运行由 Cursor / Claude Code / Codex 或外部 harness 负责。
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash -s -- --all
-```
+### 安装位置
 
-安装器只维护每个平台的一份技能副本：
+安装器只维护每个平台的一份 Agent Team 副本：
 
 | 平台 | 安装路径 |
 |------|----------|
@@ -138,133 +147,192 @@ curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/
 | Claude Code | `~/.claude/skills/agent-team` |
 | Codex | `${CODEX_HOME:-~/.codex}/skills/agent-team` |
 
-升级时，安装器只会清理它拥有的 Cursor `agent-team-*.md` 专家文件。若检测到旧版通用文件名（如 `qa.md`、`researcher.md`），会发出迁移提示但不会删除；请确认它们属于旧版 Agent Team 后再自行备份、移除。旧版本还可能在 `~/.agents/skills/agent-team` 留下 Codex 副本，建议备份后移除，避免 Codex 重复发现同一技能；若 `CODEX_HOME` 明确指向 `~/.agents`，该路径就是权威安装，不会作为旧副本告警。
+重复运行安装命令即可升级。内容完全一致时不会重复备份。
+
+### 升级与安全
+
+- 远程安装会核对缓存的 Git origin。已有缓存只作为对象参考，实际 fetch 在隔离的临时仓库中完成，再从所请求 ref 的提交导出干净源码。
+- 缓存中的工作树修改、未跟踪文件、replace refs 和本地 Git 配置不会进入或控制安装结果。
+- 仓库 URL 不允许内嵌凭证、query 或 fragment，安装器也不会打印 origin URL。
+- Skill 目录按固定 manifest 生成干净 payload，并在目标文件系统暂存后事务式切换；整次命令中途失败会恢复所有旧目标。
+- 内容发生变化的旧 skill 会保留到对应平台根目录的 `backups/.agent-team-backup.*`，安装器会打印路径。活动 skill 目录视为受管理目录，自定义文件请放在目录之外。
+- Cursor 专家人设安装为 `~/.cursor/agents/agent-team-*.md`，不会占用 `qa.md` 等通用文件名。安装器用 `.agent-team-managed-agents` 记录固定七个专家文件；未知的 `agent-team-*.md` 和旧版通用文件名只告警、不删除。
+- 旧版本可能在 `~/.agents/skills/agent-team` 留下 Codex 副本。建议备份后移除，避免重复发现；若 `CODEX_HOME` 明确指向 `~/.agents`，该路径就是权威安装，不会告警。
+
+### 本地验证
+
+仓库不依赖第三方测试包；安装测试全部使用临时 home/cache，不触碰真实用户配置：
+
+```bash
+bash -n install.sh scripts/install-from-github.sh scripts/test-install.sh
+bash scripts/test-install.sh
+python3 scripts/run-evals.py
+python3 scripts/run-behavior-evals.py
+python3 scripts/test-evals.py
+git diff --check
+```
+
+`scripts/run-evals.py` 默认只校验 eval 定义、必需安全覆盖和 skill 结构，**不会执行 agent 行为**；使用 `--actual <results.json>` 才会把外部 harness 产生的机器可读执行结果与预期逐项比较。`scripts/run-behavior-evals.py` 校验真实型任务回放结果 JSON，也不直接执行 agent。GitHub Actions 会在 macOS 与 Ubuntu 上运行离线 contract、安装器、回放结果和结构检查，不把它们冒充真实 agent eval。
 
 ---
 
 ## English
 
-### Why this exists
+### Quick Start
 
-Solo development constantly switches between researching code, implementing features, running tests, reviewing diffs, clicking through UI, debugging failures, and writing notes. Context gets messy, and one assistant often tries to play every role at once.
-
-**Agent Team** is built so that:
-
-- You state the goal;
-- A lead agent decides which experts are actually needed;
-- Specialists collaborate with clear ownership—instead of one model doing everything poorly.
-
-You don’t manually rotate personas. Use the platform-specific entry point and let the team divide the work.
-
-### How it works
-
-1. **You give a goal**  
-   e.g. “Add captcha to the login page and collect verification evidence.”
-
-2. **The lead analyzes the request**  
-   Research? Implementation? Tests? Review? UI checks? Debugging? Docs?
-
-3. **Experts are dispatched on demand**  
-   Only the needed roles are called—no mandatory full roster, no fixed assembly line. Independent read-only work may run in parallel; writers may run concurrently only with disjoint paths, while overlapping scopes stay sequential.
-
-4. **Progress is reported at meaningful transitions**
-
-   Updates are sent when dispatch starts, work becomes blocked or is reassigned, and the team finishes, not as repetitive heartbeat messages.
-
-5. **Wrap-up and acceptance**  
-   Changes, verification, and remaining risks are summarized; extra experts are called only if needed.
-
-### Experts
-
-| Expert | Focus |
-|--------|--------|
-| Atlas (Generalist) | Docs, checklists, notes, mixed errands |
-| Mira (Researcher) | Code/environment discovery and entry points |
-| Kane (Full-stack Engineer) | Frontend/backend implementation |
-| Vera (QA) | Tests/builds and evidence collection |
-| Reed (Code Reviewer) | Review and risk feedback |
-| Lina (UI Operator) | Browser flows and visual bug reproduction |
-| Orin (Troubleshooter) | Reproduction and root-cause analysis |
-
-### How to use it
-
-Good fits:
-
-- Feature work and small iterations  
-- Bug fixes with regression checks  
-- Pre-commit / pre-PR review  
-- UI issue reproduction  
-- Release notes and checklists  
-- Fast orientation in unfamiliar repos  
-
-Use the entry point for your platform.
-
-**Cursor**
-
-```text
-/agent-team Add captcha support to the login page and collect verification evidence
-```
-
-**Claude Code**
-
-```text
-/agent-team Review the latest diff for security risks
-```
-
-**Codex**
-
-```text
-$agent-team Write this week’s release notes and a launch checklist
-```
-
-Codex also supports natural-language triggers, for example: `Use the expert team to reproduce this error, find the root cause, and suggest a minimal fix.`
-
-### Install
-
-Share this repo URL, then install with (**no key required; Git is required**):
-
-**Cursor (recommended)**
+Install to Cursor by default:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash
 ```
 
-Cursor expert personas are installed as `~/.cursor/agents/agent-team-*.md`, so generic names such as `qa.md` are left untouched.
+Install to other platforms:
 
-If `curl` hits a stale cache:
+```bash
+# Claude Code
+curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash -s -- --claude
+
+# Codex
+curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash -s -- --codex
+
+# Install every target
+curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash -s -- --all
+```
+
+No API key is required, but `git` and `tar` must be available. If `curl` hits a stale cache, use:
 
 ```bash
 git clone --depth 1 https://github.com/JasonDee-hub/agent-team-skill.git /tmp/agent-team-skill \
   && bash /tmp/agent-team-skill/install.sh
 ```
 
-**Claude Code**
+Use the entry point for your platform:
+
+| Platform | Entry Point | Example |
+|----------|-------------|---------|
+| Cursor | `/agent-team` | `/agent-team Add captcha support to the login page and collect verification evidence` |
+| Claude Code | `/agent-team` | `/agent-team Review the latest diff for security risks` |
+| Codex | `$agent-team` | `$agent-team Write this week's release notes and a launch checklist` |
+
+Codex also supports natural-language triggers, for example: `Use the expert team to reproduce this error, find the root cause, and suggest a minimal fix.`
+
+### What It Is
+
+Agent Team is a lead-agent orchestration skill. It is not a fixed pipeline, and you do not manually rotate personas.
+
+You state the goal. The lead decides which roles are actually needed and discloses the execution mode when dispatch starts:
+
+- `real_multi_agent`: the host supports real independent agents/processes, so specialists can coordinate by dependency. Only QA or review from this mode may be called independent verification.
+- `single_agent_simulation`: when the host lacks independent agents, the lead follows the selected personas sequentially. This mode is never presented as parallel or independent acceptance.
+
+Good fits:
+
+- Feature work and small iterations
+- Bug fixes with regression checks
+- Pre-commit or pre-PR review
+- UI issue reproduction and evidence capture
+- Fast orientation in unfamiliar repositories
+- Developer-facing release notes, checklists, and docs
+
+Poor fits:
+
+- You only want one generic subagent to answer a single-domain request, without role separation or independent acceptance.
+- You need authoritative medical, legal, financial, or regulatory output.
+- You ask for external high-impact actions such as commits, publishing, deployment, or production writes without explicit authorization.
+
+### How It Works
+
+1. **Classify the task level**
+   Tiny or read-only requests are handled directly by the lead; single-domain work gets one specialist; compound or high-risk work adds only the necessary roles.
+
+2. **Dispatch experts on demand**
+   The full roster is not used by default. Independent read-only work may run in parallel; write tasks may run concurrently only with disjoint paths, while overlapping scopes stay sequential.
+
+3. **Declare authority first**
+   Every handoff includes `write_authority`, `scope.read_paths`, `scope.write_paths`, and `scope.external_actions`. Without explicit write authority, the task is treated as read-only.
+
+4. **Report meaningful progress**
+   Updates are sent when dispatch starts, work is blocked or reassigned, a long phase completes a verifiable milestone, and the team finishes. Repetitive empty status updates are avoided.
+
+5. **Wrap up with acceptance evidence**
+   The final response summarizes dispatched roles, deliverables, verification evidence, and remaining risks. If evidence is insufficient, the lead dispatches the relevant expert again.
+
+Output follows the user's language, falling back to Simplified Chinese only when unclear. For high-stakes medical, legal, financial, or regulatory work, Atlas is limited to neutral outlines, source-backed checklists/questions, or non-authoritative drafts requiring qualified review.
+
+### Experts
+
+| Expert | Focus |
+|--------|-------|
+| Atlas (Generalist) | Docs, checklists, one-off non-product helpers |
+| Mira (Researcher) | Code/environment discovery and entry points |
+| Kane (Full-stack Engineer) | Product code/config, CI, builds, dependencies, technical plans |
+| Vera (QA) | Tests/builds, test-only changes, verification evidence |
+| Reed (Code Reviewer) | Review and risk feedback |
+| Lina (UI Operator) | Browser flows and visual bug reproduction |
+| Orin (Troubleshooter) | Reproduction and root-cause analysis |
+
+### Examples and Behavior Replay
+
+Typical delivery samples live in [`examples/`](examples/):
+
+- Feature implementation followed by independent QA: [feature-with-independent-qa.md](examples/feature-with-independent-qa.md)
+- Read-only security review: [readonly-review.md](examples/readonly-review.md)
+- Honest scope-blocked handoff: [scope-blocked.md](examples/scope-blocked.md)
+- UI reproduction and evidence capture: [ui-reproduction.md](examples/ui-reproduction.md)
+- High-risk out-of-domain blocker: [high-risk-blocked.md](examples/high-risk-blocked.md)
+
+The realistic replay baseline lives in `evals/replay-cases.json`. It currently contains 15 tasks covering docs, implementation, QA, review, UI, troubleshooting, planning, parallel read-only work, security, scope, and blocking behavior. `evals/replay-results.json` records the machine-readable behavior observed from applying the current skill rules, including correct dispatch, over-dispatch, honest blocking, and truthful completion.
+
+Validate the replay results:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash -s -- --claude
+python3 scripts/run-behavior-evals.py
 ```
 
-**Codex**
+To connect a live agent runner, have it emit the same actual-results JSON shape, then run:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash -s -- --codex
+python3 scripts/run-behavior-evals.py --actual path/to/results.json
 ```
 
-Install everywhere:
+This script validates behavior result JSON; it does not execute agents directly. Live execution belongs to Cursor, Claude Code, Codex, or an external harness.
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/JasonDee-hub/agent-team-skill/main/install.sh | bash -s -- --all
-```
+### Install Locations
 
-The installer maintains one skill copy per platform:
+The installer maintains one Agent Team copy per platform:
 
-| Platform | Install path |
+| Platform | Install Path |
 |----------|--------------|
 | Cursor | `~/.cursor/skills/agent-team`, `~/.cursor/agents/agent-team-*.md`, `~/.cursor/commands/agent-team.md` |
 | Claude Code | `~/.claude/skills/agent-team` |
 | Codex | `${CODEX_HOME:-~/.codex}/skills/agent-team` |
 
-During upgrades, the installer removes only the Cursor `agent-team-*.md` profiles that it owns. If legacy generic names such as `qa.md` or `researcher.md` are present, it prints a migration warning and leaves them untouched; back them up and remove them only after confirming they came from an older Agent Team install. Older releases may also have left a Codex copy at `~/.agents/skills/agent-team`; back it up and remove it to prevent duplicate skill discovery. If `CODEX_HOME` intentionally points to `~/.agents`, that path is canonical and is not reported as a legacy copy.
+Run the same install command again to upgrade. Identical installs do not create another backup.
+
+### Upgrade and Safety
+
+- Remote installs verify the cache Git origin. An existing cache is used only as an object reference; the actual fetch runs in an isolated temporary repository before a clean payload is exported from the requested ref.
+- Cache worktree changes, untracked files, replace refs, and local Git configuration cannot enter or control the install.
+- Repository URLs may not embed credentials, query strings, or fragments, and the installer never prints origin URLs.
+- Skill directories are built as clean payloads from a fixed manifest, staged on the destination filesystem, and switched as one transaction; a failure anywhere in the requested install restores every previous target.
+- When an existing skill differs, its full directory is retained under the platform root at `backups/.agent-team-backup.*`, and the installer prints the path. Treat the active skill directory as managed; keep custom files outside it.
+- Cursor expert personas are installed as `~/.cursor/agents/agent-team-*.md`, so generic names such as `qa.md` are left untouched. `.agent-team-managed-agents` records the fixed seven managed profiles; unknown `agent-team-*.md` profiles and legacy generic names are warned about and preserved.
+- Older releases may have left a Codex copy at `~/.agents/skills/agent-team`. Back it up and remove it to prevent duplicate discovery. If `CODEX_HOME` intentionally points to `~/.agents`, that path is canonical and is not reported as legacy.
+
+### Local Validation
+
+The repository uses no third-party test package. Installer tests use temporary homes and caches and never touch real user configuration:
+
+```bash
+bash -n install.sh scripts/install-from-github.sh scripts/test-install.sh
+bash scripts/test-install.sh
+python3 scripts/run-evals.py
+python3 scripts/run-behavior-evals.py
+python3 scripts/test-evals.py
+git diff --check
+```
+
+By default, `scripts/run-evals.py` validates eval definitions, required security coverage, and skill structure; it **does not execute agent behavior**. Pass `--actual <results.json>` to compare machine-readable results produced by an external harness against expectations. `scripts/run-behavior-evals.py` validates realistic task replay result JSON and also does not execute agents directly. GitHub Actions runs the offline contract, installer, replay-result, and structure checks on macOS and Ubuntu without presenting them as live agent evals.
 
 ---
 
